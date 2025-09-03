@@ -5,7 +5,7 @@ plugins {
 
 allprojects {
     group = "com.labijie.orm"
-    version = "1.0.0"
+    version = "1.0.0-SNAPSHOT"
 
     infra {
         useDefault {
@@ -21,7 +21,7 @@ allprojects {
 subprojects {
     infra {
         if (!project.name.startsWith("dummy")) {
-            publishing(isSnapshot = true) {
+            publishing {
                 pom {
                     description = "Type-safe kotlin DSL query syntax** for aws DynamoDB."
                     githubUrl("endink", "Exposed-DynamoDB")

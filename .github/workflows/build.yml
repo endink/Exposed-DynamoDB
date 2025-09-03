@@ -63,29 +63,41 @@ jobs:
       run: gradle clean fastBuild --no-daemon "-Dorg.gradle.jvmargs=${{ env.JVM_SETTINGS }}"
     - name: Verify Signatures
       run: |
-        echo "Verifying signatures of built artifacts..."
+        echo "Verifying signatures of built artifacts for all modules..."
         
-        # 查找所有签名文件并验证
-        find . -name "*.asc" | while read sig_file; do
-          # 获取对应的原始文件（去掉 .asc 后缀）
-          original_file="${sig_file%.asc}"
+        # 查找所有构建输出目录中的签名文件
+        find . -path "*/build/libs/*.asc" | while read sig_file; do
+         # 获取对应的原始文件（去掉 .asc 后缀）
+         original_file="${sig_file%.asc}"
         
-          if [ -f "$original_file" ]; then
-            echo "Verifying signature for: $original_file"
+         if [ -f "$original_file" ]; then
+           echo "Verifying signature for: $original_file"
         
-            # 使用 GPG 验证签名
-            if gpg --verify "$sig_file" "$original_file"; then
-              echo "✓ Signature verified successfully for $original_file"
-            else
-              echo "✗ Signature verification failed for $original_file"
-              exit 1
-            fi
-          else
-            echo "Warning: No corresponding file found for signature: $sig_file"
-          fi
+           # 使用 GPG 验证签名
+           if gpg --verify "$sig_file" "$original_file"; then
+             echo "✓ Signature verified successfully for $original_file"
+           else
+             echo "✗ Signature verification failed for $original_file"
+             exit 1
+           fi
+         else
+           echo "Warning: No corresponding file found for signature: $sig_file"
+         fi
         done
         
-        echo "All signatures verified successfully!"
+        # 检查是否有任何签名文件被找到
+        sig_count=$(find . -path "*/build/libs/*.asc" | wc -l)
+        if [ "$sig_count" -eq "0" ]; then
+         echo "Warning: No signature files found in build output directories"
+         echo "Listing build directories for debugging:"
+         find . -name "build" -type d | while read build_dir; do
+           echo "Contents of $build_dir/libs:"
+           ls -la "$build_dir/libs/" 2>/dev/null || echo "  No libs directory"
+         done
+         exit 1
+        else
+         echo "Found $sig_count signature files, all verified successfully!"
+        fi
     - name: Publish to GitHub Packages
       if: ${{ env.PUB_GITHUB == 'Yes' }}
       run: gradle publishToGitHubPackages

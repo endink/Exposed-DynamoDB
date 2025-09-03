@@ -20,8 +20,8 @@ allprojects {
 
 subprojects {
     infra {
-        if (!project.name.startsWith("dummy")) {
-            publishing {
+        if (!project.name.startsWith("dummy") && project != rootProject) {
+            publishing(isSnapshot = true) {
                 pom {
                     description = "Orm and tooling for DynamoDB"
                     githubUrl("endink", "exposed-dynamodb")

@@ -91,6 +91,12 @@ object TestTable : DynamoTable("test_table") {
         get() = DynamoKeys(pk, sk)
 }
 ```
+string 等操作将映射一个到一个 DynamoDB 属性，例如 
+```kotlin
+val name = string("name_s")
+``` 
+
+表示映射一个属性到 DynamoDB， 在 DynamoDB 表中，这个属性名称是 "name_s" .
 
 #### 单表建模    
 
@@ -167,7 +173,9 @@ client.getItem(got.request())
 
 #### 投影
 
-投影当前 Table (模型行文)
+如果 Get/Query 操作中没有指定投影，默认查询当前逻辑表 (`DynamoTable`) 中的所有属性 (`Column`)。你也可以手动指定要投影的属性。   
+
+1. 投影当前 Table (默认行为)
 ```kotlin
 TestTable.get {
     project(TestTable)
@@ -177,7 +185,7 @@ TestTable.get {
 
 ```
 
-查询所有属性
+2. 查询所有属性
 ```kotlin
 TestTable.get {
     projectAll()
@@ -187,7 +195,7 @@ TestTable.get {
 
 ```
 
-查询指定列
+3. 查询指定列
 ```kotlin
 TestTable.get {
     projectAll(TestTable.name, TestTable.listValue[0]["a"]) // 查询 name 和 list[0].a
@@ -197,7 +205,7 @@ TestTable.get {
 
 ```
 
-多表查询
+4. 多表查询
 ```kotlin
 TestTable.get {
     projectAll(Table1, Table2, Table3.a) // Table1 和 Table2 所有属性, Table3 的 a 属性

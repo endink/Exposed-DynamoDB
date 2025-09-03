@@ -12,8 +12,6 @@ package com.labijie.infra.orm.dynamodb.transaction
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient
 
 
-class DynamoTransaction {
-    companion object {
-        lateinit var defaultClient: DynamoDbClient
-    }
+class DynamoTransaction(private val dynamoDbClient: DynamoDbClient) {
+
 }

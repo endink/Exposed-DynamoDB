@@ -1,0 +1,34 @@
+plugins {
+    //id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
+    id("com.labijie.infra") version Versions.infraPlugin
+}
+
+allprojects {
+    group = "com.labijie.orm"
+    version = "1.0.0"
+
+    infra {
+        useDefault {
+            includeSource = true
+            includeDocument = true
+            useMavenProxy = false
+        }
+    }
+}
+
+
+
+subprojects {
+    infra {
+        if (!project.name.startsWith("dummy")) {
+            publishing {
+                pom {
+                    description = "Orm and tooling for DynamoDB"
+                    githubUrl("endink", "exposed-dynamodb")
+                }
+                toGithubPackages("endink", "exposed-dynamodb")
+            }
+        }
+    }
+
+}

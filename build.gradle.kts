@@ -20,9 +20,6 @@ allprojects {
 
 
 subprojects {
-    group = rootProject.group
-    version = rootProject.version
-
     infra {
         if (!project.name.startsWith("dummy")) {
             publishing(true) {

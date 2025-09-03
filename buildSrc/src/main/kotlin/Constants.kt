@@ -1,6 +1,6 @@
 object Versions {
 
-    const val infraPlugin = "2.1.3"
+    const val infraPlugin = "2.1.+"
 
     const val infraBom = "3.5.3"
     const val springBoot = infraBom

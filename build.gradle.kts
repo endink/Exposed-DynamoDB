@@ -3,9 +3,19 @@ plugins {
     id("com.labijie.infra") version Versions.infraPlugin
 }
 
-group = "com.labijie.orm"
-version = "1.0.0-SNAPSHOT"
+allprojects {
 
+    group = "com.labijie.orm"
+    version = "1.0.0-SNAPSHOT"
+
+    infra {
+        useDefault {
+            includeSource = true
+            includeDocument = true
+            useMavenProxy = false
+        }
+    }
+}
 
 
 
@@ -14,13 +24,6 @@ subprojects {
     version = rootProject.version
 
     infra {
-
-        useDefault {
-            includeSource = true
-            includeDocument = true
-            useMavenProxy = false
-        }
-
         if (!project.name.startsWith("dummy")) {
             publishing(true) {
                 pom {

@@ -1,8 +1,6 @@
 
 # Exposed-DynamoDB
 
-## 📖 简介
-
 本项目受到 [kotlin-exposed](https://github.com/JetBrains/Exposed) 启发，旨在为 **AWS DynamoDB** 提供一种类型安全的 **Kotlin DSL 查询语法**。  
 它能让开发者像操作本地对象一样操作 DynamoDB 表，提供简洁、直观、可组合的 API，包括：
 

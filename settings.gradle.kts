@@ -1,4 +1,4 @@
-rootProject.name = "root"
+rootProject.name = "exposed-dynamodb-root"
 
 pluginManagement {
 

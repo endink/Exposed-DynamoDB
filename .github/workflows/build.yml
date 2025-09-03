@@ -1,0 +1,69 @@
+# This workflow will build a Java project with Gradle
+# For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-gradle
+
+name: Gradle Build And Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      maven_pub:
+        default: "Yes"
+        description: "Publish To Maven"
+        required: true
+        type: choice
+        options:
+          - "Yes"
+          - "No"
+      github_pub:
+        default: "No"
+        description: "Publish To Github"
+        required: true
+        type: choice
+        options:
+          - "Yes"
+          - "No"
+  release:
+    types: [published]
+
+env:
+  GPG_KEY_ID: ${{ secrets.MAVEN_SIGN_KEY_ID }}
+  GPG_KEY: ${{ secrets.MAVEN_SIGN_KEY }}
+  GPG_PWD: ${{ secrets.MAVEN_SIGN_KEY_PWD }}
+  MAVEN_USER: ${{ secrets.MAVEN_USER_NAME }}
+  MAVEN_KEY: ${{ secrets.MAVEN_USER_PWD }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  PUB_MAVEN: ${{ github.event.inputs.maven_pub || 'Yes' }}
+  PUB_GITHUB: ${{ github.event.inputs.github_pub || 'No' }}
+
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Set up JDK 21
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'microsoft'
+        java-version: 21
+    - name: PGP Prepare
+      run: |
+       echo "Create .gpg key"
+       echo "$GPG_KEY" > ./release.asc
+       gpg --quiet --output $GITHUB_WORKSPACE/release.gpg --dearmor ./release.asc
+       sed -i -e "s,signing.keyId=,signing.keyId=$GPG_KEY_ID,g" gradle.properties
+       sed -i -e "s,signing.password=,signing.password=$GPG_PWD,g" gradle.properties
+       sed -i -e "s,signing.secretKeyRingFile=,signing.secretKeyRingFile=$GITHUB_WORKSPACE/release.gpg,g" gradle.properties
+       cat gradle.properties
+    - name: Build with Gradle
+      run: gradle clean build -x test
+    - name: Publish to GitHub Packages
+      if: ${{ env.PUB_GITHUB == 'Yes' }}
+      run: gradle publishToGitHubPackages
+    - name: Publish to Maven Central
+      if: ${{ env.PUB_MAVEN == 'Yes' }}
+      run: gradle publishToSonatype closeAndReleaseSonatypeStagingRepository

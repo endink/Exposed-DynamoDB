@@ -8,7 +8,7 @@
 
 package com.labijie.infra.orm.dynamodb.testing
 
-import com.labijie.infra.orm.dynamodb.configuration.DynamodbAutoConfiguration
+import com.labijie.infra.orm.dynamodb.configuration.ExposedDynamodbAutoConfiguration
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration
 import org.springframework.context.ApplicationContext
 import org.springframework.context.ApplicationContextAware
@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Configuration
 
 
 @Configuration(proxyBeanMethods = false)
-@ImportAutoConfiguration(DynamodbAutoConfiguration::class)
+@ImportAutoConfiguration(ExposedDynamodbAutoConfiguration::class)
 class DynamodbTestContext: ApplicationContextAware {
 
     private lateinit var context: ApplicationContext

@@ -7,6 +7,9 @@
  */
 package com.labijie.infra.orm.dynamodb.configuration
 
+import software.amazon.awssdk.services.dynamodb.DynamoDbClientBuilder
+
 
 interface IDynamodbClientCustomizer {
+    fun customize(builder: DynamoDbClientBuilder)
 }

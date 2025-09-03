@@ -22,7 +22,7 @@ allprojects {
 subprojects {
     infra {
         if (!project.name.startsWith("dummy")) {
-            publishing(true) {
+            publishing {
                 pom {
                     description = "Type-safe kotlin DSL query syntax** for aws DynamoDB."
                     githubUrl("endink", "Exposed-DynamoDB")

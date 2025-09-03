@@ -20,11 +20,12 @@ allprojects {
 
 subprojects {
     infra {
-        if (!project.name.startsWith("dummy") && project != rootProject) {
+        if (!project.name.startsWith("dummy")) {
             publishing(isSnapshot = true) {
                 pom {
-                    description = "Orm and tooling for DynamoDB"
-                    githubUrl("endink", "exposed-dynamodb")
+                    description = "Type-safe kotlin DSL query syntax** for aws DynamoDB."
+                    githubUrl("endink", "Exposed-DynamoDB")
+                    developer("AndersXiao", "sharping@outlook.com")
                 }
                 toGithubPackages("endink", "exposed-dynamodb")
             }

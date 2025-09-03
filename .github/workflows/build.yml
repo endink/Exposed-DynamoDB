@@ -53,14 +53,14 @@ jobs:
     - name: PGP Prepare
       run: |
        echo "Create .gpg key"
-        printf '%s\n' "$GPG_KEY" > ./release.asc
+       printf '%s\n' "$GPG_KEY" > ./release.asc
        gpg --quiet --output $GITHUB_WORKSPACE/release.gpg --dearmor ./release.asc
        sed -i -e "s,signing.keyId=,signing.keyId=$GPG_KEY_ID,g" gradle.properties
        sed -i -e "s,signing.password=,signing.password=$GPG_PWD,g" gradle.properties
        sed -i -e "s,signing.secretKeyRingFile=,signing.secretKeyRingFile=$GITHUB_WORKSPACE/release.gpg,g" gradle.properties
        cat gradle.properties
     - name: Build with Gradle
-      run: gradle clean fastBuild --no-daemon "-Dorg.gradle.jvmargs=${{ env.JVM_SETTINGS }}"
+      run: gradle clean fastBuild sign --no-daemon "-Dorg.gradle.jvmargs=${{ env.JVM_SETTINGS }}"
     - name: Verify Signatures
       run: |
         echo "Verifying signatures of built artifacts for all modules..."

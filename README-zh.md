@@ -1,9 +1,10 @@
+
 <div align="center">
 <h1>Exposed-DynamoDB</h1>
 </div>
 <br>
 
-[简体中文](./README-zh.md)
+[English](./README.md)
 
 <br>
 
@@ -18,38 +19,38 @@
 
 <br>
 
-This project is inspired by [Kotlin-Exposed](https://github.com/JetBrains/Exposed) and aims to provide a type-safe **Kotlin DSL query syntax** for **AWS DynamoDB**.  
-It allows developers to manipulate DynamoDB tables like local objects and provides concise, intuitive, and composable APIs, including:
+本项目受到 [Kotlin-Exposed](https://github.com/JetBrains/Exposed) 启发，旨在为 **AWS DynamoDB** 提供一种类型安全的 **Kotlin DSL 查询语法**。  
+它能让开发者像操作本地对象一样操作 DynamoDB 表，提供简洁、直观、可组合的 API，包括：
 
-- Table schema definition
-- Type-safe query conditions
-- Projection queries
-- Conditional insert / update / delete
-- Multi-level nested field operations (list / map / set)
-- Support for DynamoDB function expressions (attribute_type, list_append, etc.)
-- Kotlin-style API, closely following the Exposed development experience
+- 表结构定义
+- 类型安全的查询条件
+- 投影查询
+- 条件插入 / 更新 / 删除
+- 多层嵌套字段操作（list / map / set）
+- DynamoDB 函数表达式支持（attribute_type, list_append 等）
+- Kotlin 风格 API，贴近 Exposed 的开发体验
 
-> This project is still WIP, and currently only provides a `1.0.0-SNAPSHOT` version. Please test thoroughly before using it in production.  
-> You can check the unit test code to see full usage examples.
+> 本项目仍然在开发中，目前只提供 `1.0.0-SNAPSHOT` 版本，在生产环境中使用请仔细测试。      
+> 你可以查看单元测试代码了解完整用法。
 
 ---
 
 ## 🚀 Getting Started
 
-### Requirements
+### 环境要求
 - JDK 21+
 - Kotlin 2.1.12+
 - AWS SDK for Java v2
 - Gradle 8.14
 
-### Install Dependencies
+### 安装依赖
 
 #### Gradle (Kotlin DSL)
 ```kotlin
 dependencies {
     // AWS SDK v2 DynamoDB
     implementation("software.amazon.awssdk:dynamodb: 2.27.3")
-    // This project's DSL
+    // 本项目 DSL
     implementation("com.labijie.orm:dynamodb-exposed: 1.0.0")
 }
 
@@ -71,14 +72,16 @@ dependencies {
 </dependencies>
 ```
 
+
+
 ---
 
-## 🛠️ Usage
+## 🛠️ 用法
 
-### 1. Define Table Schema
+### 1. 定义表结构
 
-Tables in code represent logical tables (defined in the style of relational databases), while in reality, DynamoDB tables are only identified by their name. For example,  
-`test_table` represents a DynamoDB table.
+代码中的表代表一个逻辑表 (按关系数据库习惯定义的"表")， 实际上 DynamoDb 的表仅受 name 影响，如下
+`test_table` 是 DynamoDB 的一个表。
 
 ```kotlin
 object TestTable : DynamoTable("test_table") {
@@ -96,31 +99,46 @@ object TestTable : DynamoTable("test_table") {
         .index("idx_long", ProjectionType.ALL)
     val stringValue = string("string_value")
         .index("idx_string", ProjectionType.INCLUDE, name, boolValue)
+
+    val stringSet = stringSet("string_set")
+    val numberSet = numberSet("number_set")
+    val binaryValue = binary("binary_value")
+    val binarySet = binarySet("binary_set")
+
+    val listValue = list("list_value")
+    val mapValue = map("map_value")
+
+    override val keys: DynamoKeys
+        get() = DynamoKeys(pk, sk)
+}
 ```
-
-The `string` operation maps a property directly to a DynamoDB attribute, for example:
-
+string 等操作将映射一个到一个 DynamoDB 属性，例如 
 ```kotlin
 val name = string("name_s")
-```
+``` 
 
-This maps a column to a DynamoDB attribute with the name `"name_s"`.
+表示映射一个属性到 DynamoDB， 在 DynamoDB 表中，这个属性名称是 "name_s" .
 
-#### Single Table Modeling
+#### 单表建模    
 
-Like all column-oriented NoSQL databases, DynamoDB encourages single-table modeling. Therefore, multiple logical tables can map to the same physical DynamoDB table using the same table name:
+和所有的列式 NOSQL 数据库一样，DynamoDB 推崇单表建模，因此逻辑表结构可以通过相同的表名来映射到同一个 DynamoDB 的表。
 
 ```kotlin
+
 object TestTable1 : DynamoTable("test_table")
+
 object TestTable2 : DynamoTable("test_table")
+
 object TestTable3 : DynamoTable("test_table")
+
 ```
 
-Queries and updates can operate across logical tables using expressions.
+查询和更新中我们通过表达式实现跨逻辑表更新数据。    
 
-You can also use inheritance to avoid repeating PK/SK/LSI definitions:
+对于单表建模，还可以通过继承方式，这样无需重复定义 PK/SK/LSI
 
 ```kotlin
+
 abstract class TestTableBase : DynamoTable("test_table") {
     val pk = string("pk")            // partition key
     val sk = string("sk")            // sort key
@@ -133,82 +151,92 @@ abstract class TestTableBase : DynamoTable("test_table") {
 }
 
 object TestTable2 : TestTableBase() {
-    // ... your columns
+    //...your columns
 }
 
 object TestTable3 : TestTableBase() {
-    // ... your columns
+    //...your columns
 }
+
 ```
+
 
 ---
 
-#### Creating DynamoDB Table
+#### 创建 DynamoDB 表
 
 ```kotlin
+
 val client: DynamoDbClient
 DynamodbSchemaUtils.createTableIfNotExist(client, TestTable)
+
 ```
 
-### 2. Query Example
+### 2. 查询示例
 
 ```kotlin
-// GetItem    
+
+//GetItem    
 val got = TestTable.get().keys {
     TestTable.name eq "bbb"
     TestTable.listValue[2]["nested_key"]
 }
 client.getItem(got.request())
 
-// Query
+//Query
 val query = TestTable.query().keys {
     TestTable.name eq "bbb"
     TestTable.listValue[2]["nested_key"]
 }
 client.getItem(got.request())
+
 ```
 
-#### Projection
+#### 投影
 
-If no projection is specified for Get/Query operations, all attributes (`Column`) in the current logical table (`DynamoTable`) are queried by default. You can also specify projected attributes manually.
+如果 Get/Query 操作中没有指定投影，默认查询当前逻辑表 (`DynamoTable`) 中的所有属性 (`Column`)。你也可以手动指定要投影的属性。   
 
-1. Project current table (default behavior)
+1. 投影当前 Table (默认行为)
 ```kotlin
 TestTable.get {
     project(TestTable)
 }.keys {
     TestTable.name eq "bbb"
 }
+
 ```
 
-2. Project all attributes
+2. 查询所有属性
 ```kotlin
 TestTable.get {
     projectAll()
 }.keys {
     TestTable.name eq "bbb"
 }
+
 ```
 
-3. Project specific columns
+3. 查询指定列
 ```kotlin
 TestTable.get {
-    projectAll(TestTable.name, TestTable.listValue[0]["a"]) // query name and list[0].a
+    projectAll(TestTable.name, TestTable.listValue[0]["a"]) // 查询 name 和 list[0].a
 }.keys {
     TestTable.name eq "bbb"
 }
+
 ```
 
-4. Multi-table projection
+4. 多表查询
 ```kotlin
 TestTable.get {
-    projectAll(Table1, Table2, Table3.a) // All attributes from Table1 and Table2, a column from Table3
+    projectAll(Table1, Table2, Table3.a) // Table1 和 Table2 所有属性, Table3 的 a 属性
 }.keys {
     TestTable.name eq "bbb"
 }
+
 ```
 
-#### Using Local Secondary Index (LSI)
+#### 使用本地二级索引 (LSI)
 
 ```kotlin
 val query = TestTable.query {
@@ -233,17 +261,19 @@ query.request()
 
 ---
 
-### 3. Insert Data Example
+### 3. 插入数据示例
 
 ```kotlin
-// Simple insert
-TestTable.put {
+
+简单更新
+
+TestTable.put { 
     it[TestTable.name] = "a"
     it[TestTable.intValue] = null
 }
 ```
 
-Conditional insert
+条件表达式
 ```kotlin
 TestTable.put {
     it[TestTable.name] = "a"
@@ -254,17 +284,17 @@ TestTable.put {
 
 ---
 
-### 4. Delete Data Example
+### 4. 删除数据示例
 
 ```kotlin
-// Simple delete by PK and SK
+// 简单根据 PK, SK 删除
 TestTable.delete {
     keys {
         TestTable.name eq "bbb"
     }
 }
 
-// Conditional delete
+// 条件表达式删除
 TestTable.delete {
     keys {
         TestTable.name eq "bbb"
@@ -275,48 +305,49 @@ TestTable.delete {
 
 ---
 
-### 5. Update Data Example
+### 5. 更新数据示例
 
-Simple update
+简单更新   
 
 ```kotlin
-// Update by PK and SK
+// 简单根据 PK, SK 更新
 TestTable.update({
     keys { TestTable.name eq "bbb" }
 }) {
     it[TestTable.name] = "aaa"
-    it[TestTable.floatValue] = TestTable.floatValue + 1.0f // set floatValue = floatValue + 1
-    it[TestTable.intValue] = TestTable.intValue.ifNotExists(0) + 1 // set intValue = if_not_exists(int_value, 0) + 1
-    it[TestTable.numberSet] += setOfString(123, 456) // ADD
-    it[TestTable.stringSet] -= setOfString("ccc") // DELETE
-    it[TestTable.mapValue]["aaa"][1]["bb"] += setOfString("aaa", "bbb") // ADD
+    it[TestTable.floatValue] = TestTable.floatValue + 1.0f // set floatValue =  floatValue + 1
+    it[TestTable.intValue] = TestTable.intValue.ifNotExists(0) + 1 // set intValue =  if_not_exists(int_value, 0) + 1
+    it[TestTable.numberSet] += setOfString(123, 456) //ADD
+    it[TestTable.stringSet] -= setOfString("ccc") //DELETE
+    it[TestTable.mapValue]["aaa"][1]["bb"] += setOfString("aaa", "bbb") //ADD
 }
+
 ```
 
-Conditional update
+条件表达式更新    
 
 ```kotlin
 TestTable.update({
     keys { TestTable.name eq "bbb" }
-    condition {
-        (TestTable.intValue eq 1) or
-        (TestTable.intValue less 10)
+    condition { 
+        (TestTable.intValue eq 1) or 
+        (TestTable.intValue less 10) 
     }
 }) {
-    it[TestTable.intValue] = TestTable.intValue.ifNotExists(0) + 1
-    it[TestTable.stringSet] += setOfString("aa", "bbb")
-    it[TestTable.stringSet] -= setOfString("ccc")
-    it[TestTable.mapValue]["aaa"][1]["bb"] += setOfString("aaa", "bbb")
+    it[TestTable.intValue] = TestTable.intValue.ifNotExists(0) + 1 // set intValue =  if_not_exists(int_value, 0) + 1
+    it[TestTable.stringSet] += setOfString("aa", "bbb") //ADD
+    it[TestTable.stringSet] -= setOfString("ccc") //DELETE
+    it[TestTable.mapValue]["aaa"][1]["bb"] += setOfString("aaa", "bbb") //ADD
 }
 ```
 
-> Functions like list_append / ADD / DELETE are automatically converted.
+> 支持 list_append/ADD/DELETE 函数自动转换。
 
 ---
 
-## 🧪 Demo Example
+## 🧪 Demo 示例
 
-Start a local DynamoDB (recommended [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html)) or use a real AWS account.
+启动本地 DynamoDB（推荐 [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html)）或使用真实 AWS 账户。
 
 ```kotlin
 class CRUDTester {
@@ -325,19 +356,19 @@ class CRUDTester {
 
     fun testCRUD() {
 
-        // Get single item
+        // 获取单条记录
         val got = TestTable.get().keys {
             TestTable.name eq "bbb"
         }
         client.getItem(got.request())
 
-        // Insert item
+        // 插入记录
         TestTable.put {
             it[TestTable.name] = "a"
             it[TestTable.intValue] = null
         }
 
-        // Update item
+        // 更新记录
         TestTable.update({
             keys { TestTable.name eq "bbb" }
             condition { (TestTable.intValue eq 1) or (TestTable.intValue less 10) }
@@ -346,13 +377,13 @@ class CRUDTester {
             it[TestTable.stringSet] += setOfString("aa", "bbb")
         }
 
-        // Delete item
+        // 删除记录
         TestTable.delete {
             keys { TestTable.name eq "bbb" }
             condition { TestTable.intValue eq 0 }
         }
 
-        // Query example
+        // 查询示例
         val query = TestTable.query()
             .keys(index = "idx_long") {
                 TestTable.name eq "a" and (TestTable.name beginsWith "aa")
@@ -367,15 +398,14 @@ class CRUDTester {
 
 ---
 
-## 📦 Why use exposed-dynamodb?
-- Type-safe DynamoDB DSL
-- Supports projection queries and conditional expressions
-- Native support for nested list / map / set operations
-- Kotlin-style API, closely following the Kotlin-Exposed programming experience
+## 📦 为什么要用 exposed-dynamodb ?
+- 类型安全的 DynamoDB DSL
+- 支持投影查询、条件表达式
+- 原生支持 list / map / set 嵌套操作
+- Kotlin 风格 API，贴近 kotlin-exposed 的编程体验
 
 ---
 
 ## 📜 License
-This project is licensed under [Apache License 2.0](./LICENSE).  
-Issues and PRs are welcome to help improve the functionality 🎉
-
+本项目采用 [Apache License 2.0](./LICENSE)。  
+欢迎提交 Issue 和 PR，一起完善功能 🎉

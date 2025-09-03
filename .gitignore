@@ -3,6 +3,7 @@ gradle/
 build/
 !**/src/main/**/build/
 !**/src/test/**/build/
+.gredlew*
 
 ### IntelliJ IDEA ###
 *.iws

@@ -35,7 +35,7 @@ object DynamodbSchemaUtils {
     /**
      * Create a DynamoDB table including primary key and Local Secondary Indexes (LSI)
      */
-    fun createTableIfNotExist(client: DynamoDbClient, table: DynamoTable): Boolean {
+    fun <PK, SK> createTableIfNotExist(client: DynamoDbClient, table: DynamoTable<PK, SK>): Boolean {
 
         // 检查表是否已经存在
         val resp = client.listTables()
@@ -47,8 +47,8 @@ object DynamodbSchemaUtils {
         val attributeDefinitions = mutableSetOf<AttributeDefinition>()
 
         // Add primary key attributes
-        table.keys.partitionKey.getColumn().toAttributeDefinition()?.let { attributeDefinitions.add(it) }
-        table.keys.sortKey?.getColumn()?.toAttributeDefinition()?.let { attributeDefinitions.add(it) }
+        table.primaryKey.partitionKey.getColumn().toAttributeDefinition()?.let { attributeDefinitions.add(it) }
+        table.primaryKey.sortKey?.getColumn()?.toAttributeDefinition()?.let { attributeDefinitions.add(it) }
 
         // Add LSI sort key attributes
         table.indexes.values.forEach { index ->
@@ -59,11 +59,11 @@ object DynamodbSchemaUtils {
         val keySchema = mutableListOf<KeySchemaElement>()
         keySchema.add(
             KeySchemaElement.builder()
-                .attributeName(table.keys.partitionKey.getColumn().name)
+                .attributeName(table.primaryKey.partitionKey.getColumn().name)
                 .keyType(KeyType.HASH)
                 .build()
         )
-        table.keys.sortKey?.let {
+        table.primaryKey.sortKey?.let {
             keySchema.add(
                 KeySchemaElement.builder()
                     .attributeName(it.getColumn().name)
@@ -80,7 +80,7 @@ object DynamodbSchemaUtils {
                 .indexName(indexName)
                 .keySchema(
                     KeySchemaElement.builder()
-                        .attributeName(table.keys.partitionKey.getColumn().name)
+                        .attributeName(table.primaryKey.partitionKey.getColumn().name)
                         .keyType(KeyType.HASH)
                         .build(),
                     KeySchemaElement.builder()
@@ -149,12 +149,12 @@ object DynamodbSchemaUtils {
      * Clear all items in the given DynamoDB table.
      * This uses Scan to retrieve items and BatchWriteItem to delete them in batches.
      */
-    fun clearTable(client: DynamoDbClient, table: DynamoTable) {
+    fun <PK, SK> clearTable(client: DynamoDbClient, table: DynamoTable<PK, SK>) {
         val tableName = table.tableName
         logger.info("Clearing table: $tableName")
 
-        val pkName = table.keys.partitionKey.getColumn().name
-        val skName = table.keys.sortKey?.getColumn()?.name
+        val pkName = table.primaryKey.partitionKey.getColumn().name
+        val skName = table.primaryKey.sortKey?.getColumn()?.name
 
         var totalDeleted = 0
         var batchCount = 0

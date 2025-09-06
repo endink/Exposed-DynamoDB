@@ -12,6 +12,7 @@ import com.labijie.infra.orm.dynamodb.exception.DynamoException
 import com.labijie.infra.orm.dynamodb.exception.InvalidDynamoForwardTokenException
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue
+import java.net.URLDecoder
 import java.net.URLEncoder
 import java.util.Base64
 import kotlin.collections.joinToString
@@ -55,14 +56,14 @@ object LastEvaluatedKeyCodec {
     }
 
     fun decode(stringValue: String): Map<String, AttributeValue> {
-        val str = Base64.getUrlEncoder().encode(stringValue.toByteArray(Charsets.UTF_8)).toString(Charsets.UTF_8)
+        val str = Base64.getUrlDecoder().decode(stringValue.toByteArray(Charsets.UTF_8)).toString(Charsets.UTF_8)
         val list =  str.split("&")
         val map = mutableMapOf<String, AttributeValue>()
         list.forEach { values ->
             val keyValue = values.split("=")
             if(keyValue.size == 2) {
                 val name = keyValue[0]
-                val value = URLEncoder.encode(keyValue[1], Charsets.UTF_8).toAttribute()
+                val value = URLDecoder.decode(keyValue[1], Charsets.UTF_8).toAttribute()
                 map.putIfAbsent(name, value)
             }
         }

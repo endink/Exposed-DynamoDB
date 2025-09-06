@@ -17,8 +17,8 @@ import software.amazon.awssdk.services.dynamodb.model.QueryRequest
  */
 
 
-open class DynamoQueryBuilder(table: DynamoTable) : ProjectionBaseBuilder(table),
-    IDynamoFilterBuilder {
+open class DynamoQueryBuilder<PK, SK>(table: DynamoTable<PK, SK>) : ProjectionBaseBuilder(table),
+    IDynamoFilterBuilder<PK, SK> {
 
 
     private var filterExpr: DynamoExpression<Boolean>? = null
@@ -28,17 +28,17 @@ open class DynamoQueryBuilder(table: DynamoTable) : ProjectionBaseBuilder(table)
     private var indexForward: Boolean = true
     private var lastKey: Map<String, AttributeValue>? = null
 
-    fun lastKeys(keys: Map<String, AttributeValue>): DynamoQueryBuilder {
+    fun lastKeys(keys: Map<String, AttributeValue>): DynamoQueryBuilder<PK, SK> {
         lastKey = keys
         return this
     }
 
-    fun lastKeys(encodedKeys: String): DynamoQueryBuilder {
+    fun lastKeys(encodedKeys: String): DynamoQueryBuilder<PK, SK> {
         lastKey = LastEvaluatedKeyCodec.decode(encodedKeys)
         return this
     }
 
-    fun limit(limit: Int): DynamoQueryBuilder {
+    fun limit(limit: Int): DynamoQueryBuilder<PK, SK> {
         this.limit = limit
         return this
     }
@@ -53,14 +53,14 @@ open class DynamoQueryBuilder(table: DynamoTable) : ProjectionBaseBuilder(table)
         return
     }
 
-    fun keys(index: String? = null, block: IDynamoRangeKeyQueryBuilder.() -> DynamoExpression<Boolean>): DynamoQueryBuilder {
+    fun keys(index: String? = null, block: IDynamoRangeKeyQueryBuilder<PK, SK>.() -> DynamoExpression<Boolean>): DynamoQueryBuilder<PK, SK> {
         indexName = index
         keyExpr = block.invoke(this)
         return this
     }
 
 
-    fun filter(block: DynamoQueryBuilder.() -> DynamoExpression<Boolean>): DynamoQueryBuilder {
+    fun filter(block: DynamoQueryBuilder<PK, SK>.() -> DynamoExpression<Boolean>): DynamoQueryBuilder<PK, SK> {
         filterExpr = block.invoke(this)
         return this
     }
@@ -76,14 +76,15 @@ open class DynamoQueryBuilder(table: DynamoTable) : ProjectionBaseBuilder(table)
 
         val request = QueryRequest.builder()
             .ifNullOrBlankInput(projectExpression) { projectionExpression(projectExpression) }
-            .tableName(tableName)
             .ifNotNull(limit) { limit(it) }
+            .ifNotNull(lastKey) { exclusiveStartKey(it) }
             .ifNullOrBlankInput(indexName) { indexName(it) }
             .keyConditionExpression(keyExpression)
             .ifNullOrBlankInput(filterExpression, { filterExpression(it) })
             .ifNotNullOrEmpty(context.values) { expressionAttributeValues(it) }
             .ifNotNullOrEmpty(context.attributeNames) { expressionAttributeNames(it) }
             .scanIndexForward(indexForward)
+             .tableName(tableName)
             .ifNotNull(customizer) {
                 it.invoke(this)
                 this

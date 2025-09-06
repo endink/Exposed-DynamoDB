@@ -10,27 +10,53 @@ package com.labijie.infra.orm.dynamodb.mapping
 
 import com.labijie.infra.orm.dynamodb.DynamoColumn
 import com.labijie.infra.orm.dynamodb.DynamoTable
-import com.labijie.infra.orm.dynamodb.exception.DuplicateDynamoAttributeException
-import kotlin.reflect.full.memberProperties
+import java.lang.reflect.Field
 
-class TableRegistration(val table: DynamoTable) {
+class TableRegistration(val table: DynamoTable<*, *>) {
 
-    val columns by lazy {
-        val columns = HashMap<String, DynamoColumn<*>>(table::class.memberProperties.size)
-        table::class.memberProperties.forEach {
-            if (it is DynamoColumn<*>) {
-                val exist = columns.putIfAbsent(it.name, it)
-                if (exist != null) {
-                    throw DuplicateDynamoAttributeException(it.tableName, it.name)
-                }
+    companion object {
+        fun getAllFields(clazz: Class<*>): List<Field> {
+            val fields = mutableListOf<Field>()
+            var current: Class<*>? = clazz
+            while (current != null && current != Any::class.java) {
+                fields += current.declaredFields
+                current = current.superclass
             }
+            return fields
         }
-        columns
     }
 
+    private class Mapping(val fieldToColumn: Map<String, DynamoColumn<*>>, val columnToField: Map<String, Field>)
 
-    fun findColumn(fieldName: String): DynamoColumn<*>? {
-        return columns[fieldName]
+    private val mapping by lazy {
+        val fieldToColumn = mutableMapOf<String, DynamoColumn<*>>()
+        val columnToField = mutableMapOf<String, Field>()
+
+        getAllFields(table::class.java)
+            .filter { DynamoColumn::class.java.isAssignableFrom(it.type) }
+            .forEach {
+                property->
+                property.isAccessible = true
+                val col = property.get(table) as DynamoColumn<*>
+                if(table.columns.contains(col)) {
+                    fieldToColumn.putIfAbsent(property.name, col)
+                    columnToField.putIfAbsent(col.name, property)
+                }
+            }
+
+        Mapping(fieldToColumn, columnToField)
+    }
+
+    fun findFieldByColumn(columnName: String): Field? {
+        return mapping.columnToField[columnName]
+    }
+
+    fun findColumnByField(fieldName: String): DynamoColumn<*>? {
+        return mapping.fieldToColumn[fieldName]
+    }
+
+    fun findColumnByName(columnName: String): DynamoColumn<*>? {
+        return table.columnNames[columnName]
     }
 
     override fun equals(other: Any?): Boolean {
@@ -39,10 +65,7 @@ class TableRegistration(val table: DynamoTable) {
 
         other as TableRegistration
 
-        if (table != other.table) return false
-        if (columns != other.columns) return false
-
-        return true
+        return table == other.table
     }
 
     override fun hashCode(): Int {

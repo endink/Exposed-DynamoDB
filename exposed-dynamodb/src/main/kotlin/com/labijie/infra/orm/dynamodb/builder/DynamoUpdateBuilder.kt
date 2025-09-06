@@ -1,13 +1,6 @@
 package com.labijie.infra.orm.dynamodb.builder
 
-import com.labijie.infra.orm.dynamodb.DynamoTable
-import com.labijie.infra.orm.dynamodb.DynamoUpdateExpression
-import com.labijie.infra.orm.dynamodb.IDynamodbUpdateBuilder
-import com.labijie.infra.orm.dynamodb.RenderContext
-import com.labijie.infra.orm.dynamodb.UpdateRequestCustomizer
-import com.labijie.infra.orm.dynamodb.ifNotNull
-import com.labijie.infra.orm.dynamodb.ifNotNullOrEmpty
-import com.labijie.infra.orm.dynamodb.ifNullOrBlankInput
+import com.labijie.infra.orm.dynamodb.*
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.services.dynamodb.model.ReturnValue
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest
@@ -20,7 +13,7 @@ import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest
  * File Create: 2025-09-03
  */
 
-class DynamoUpdateBuilder(internal val table: DynamoTable) {
+class DynamoUpdateBuilder<PK, SK>(internal val table: DynamoTable<PK, SK>) {
 
     companion object {
         private val logger by lazy {
@@ -35,7 +28,7 @@ class DynamoUpdateBuilder(internal val table: DynamoTable) {
     }
 
     internal val condition by lazy {
-        DynamoConditionBuilder()
+        DynamoConditionBuilder<PK, SK>()
     }
 
     fun request(returnValue: ReturnValue = ReturnValue.NONE, customizer: UpdateRequestCustomizer? = null): UpdateItemRequest {

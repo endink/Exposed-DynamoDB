@@ -10,13 +10,14 @@ package com.labijie.infra.orm.dynamodb.builder
 
 import com.labijie.infra.orm.dynamodb.*
 import com.labijie.infra.orm.dynamodb.exception.DynamoException
+import com.labijie.infra.orm.dynamodb.exception.DynamodbExpressionFormatException
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue
 import software.amazon.awssdk.services.dynamodb.model.BatchGetItemRequest
 import software.amazon.awssdk.services.dynamodb.model.KeysAndAttributes
 
-class DynamoBatchGetBuilder internal constructor(private val table: DynamoTable) {
+class DynamoBatchGetBuilder<TPartitionKey, TSortKey> internal constructor(private val table: DynamoTable<TPartitionKey, TSortKey>) {
 
-    private val getItems: MutableMap<String, ItemGet> = mutableMapOf()
+    private val tableGet: MutableMap<String, ItemBuilder<*, *>> = mutableMapOf()
     private var customizer: BatchGetRequestCustomizer? = null
 
     val tableName: String = table.tableName
@@ -37,14 +38,14 @@ class DynamoBatchGetBuilder internal constructor(private val table: DynamoTable)
         return request
     }
 
-    fun request(customizer: ((BatchGetItemRequest.Builder)-> Unit)? = null): BatchGetItemRequest {
+    fun request(customizer: ((BatchGetItemRequest.Builder) -> Unit)? = null): BatchGetItemRequest {
         this.customizer = customizer
-        val items = getItems.mapValues {
+        val tableGetItems = tableGet.mapValues { item ->
             val context = RenderContext(false)
-            it.value.keysItem(context)
+            item.value.render(context)
         }
         val request = BatchGetItemRequest.builder()
-            .requestItems(items)
+            .requestItems(tableGetItems)
             .ifNotNull(customizer) {
                 it.invoke(this)
                 this
@@ -56,55 +57,86 @@ class DynamoBatchGetBuilder internal constructor(private val table: DynamoTable)
 
 
     inner class Context internal constructor() {
-        fun get(groupName: String, build: ItemGet.() -> Unit): Context {
-            val innerBuilder = ItemGet(table)
 
-            build.invoke(innerBuilder)
-            getItems[groupName] = innerBuilder
-            return this
+        fun get(itemBuild: ItemBuilder<TPartitionKey, TSortKey>.() -> Unit) {
+            val innerBuilder = ItemBuilder(table)
+            itemBuild.invoke(innerBuilder)
+
+            tableGet[tableName] = innerBuilder
+        }
+
+        fun <PK, SK> get(t: DynamoTable<PK, SK>, itemBuild: ItemBuilder<PK, SK>.() -> Unit) {
+            val innerBuilder = ItemBuilder(t)
+            itemBuild.invoke(innerBuilder)
+
+            tableGet[tableName] = innerBuilder
         }
     }
 
 
-    inner class ItemGet internal constructor(table: DynamoTable) : ProjectionBaseBuilder(table) {
-        val keys: MutableMap<String, AttributeValue> = mutableMapOf()
+    inner class ItemBuilder<PK, SK> internal constructor(table: DynamoTable<PK, SK>) : ProjectionBaseBuilder(table) {
+        private val keys: MutableList<MutableMap<String, AttributeValue>> = mutableListOf()
         private var consistentRead: Boolean = false
 
         private val projection by lazy {
             projection()
         }
 
-        fun keys(block: IDynamoExactKeyQueryBuilder.() -> DynamoExpression<Boolean>): ItemGet {
-            val expr = block.invoke(IDynamoExactKeyQueryBuilder.NULL)
-            keys.clear()
-            IDynamoExactKeyQueryBuilder.extractKeys(expr, keys)
-
-            if (keys.isEmpty()) throw DynamoException("No key clause defined.")
-
+        fun keys(partitionKey: PK, vararg sortKey: SK): ItemBuilder<PK, SK> {
+            val pk = table.primaryKey.partitionKey.getColumn()
+            val sk = table.primaryKey.sortKey
+            if (sk != null) {
+                if(sortKey.isEmpty()) {
+                    throw DynamodbExpressionFormatException.sortKeyMissed(table.tableName)
+                }
+                sortKey.forEach {
+                    val pkAndSk = mutableMapOf(
+                        pk.name to pk.toDbValue(partitionKey),
+                        sk.getColumn().name to sk.getColumn().toDbValue(it)
+                    )
+                    keys.add(pkAndSk)
+                }
+            } else {
+                keys.add(
+                    mutableMapOf(
+                        pk.name to pk.toDbValue(partitionKey),
+                    )
+                )
+            }
             return this
         }
 
-        fun projectAll(): ItemGet {
+        fun keys(block: IDynamoExactKeyQueryBuilder<PK, SK>.() -> DynamoExpression<Boolean>): ItemBuilder<PK, SK> {
+            val expr = block.invoke(IDynamoExactKeyQueryBuilder.default())
+            val attributes = mutableMapOf<String, AttributeValue>()
+            IDynamoExactKeyQueryBuilder.extractKeys(expr, attributes)
+
+            if (attributes.isEmpty()) throw DynamoException("No key clause defined.")
+            keys.add(attributes)
+            return this
+        }
+
+        fun projectAll(): ItemBuilder<PK, SK> {
             projection.projectAll()
             return this
         }
 
-        fun projectKeyOnly(): ItemGet {
+        fun projectKeyOnly(): ItemBuilder<PK, SK> {
             projection.projectKeyOnly()
             return this
         }
 
-        fun project(vararg projections: IDynamoProjection): ItemGet {
+        fun project(vararg projections: IDynamoProjection): ItemBuilder<PK, SK> {
             projection.project(*projections)
             return this
         }
 
-        fun consistentRead(consistentRead: Boolean): ItemGet {
+        fun consistentRead(consistentRead: Boolean): ItemBuilder<PK, SK> {
             this.consistentRead = consistentRead
             return this
         }
 
-        internal fun keysItem(context: RenderContext): KeysAndAttributes {
+        internal fun render(context: RenderContext): KeysAndAttributes {
             if (keys.isEmpty()) throw DynamoException("No key clause defined.")
 
             val projectionExpression = renderProjection(context)

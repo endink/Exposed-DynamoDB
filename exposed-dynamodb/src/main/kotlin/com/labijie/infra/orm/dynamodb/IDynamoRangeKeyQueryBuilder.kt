@@ -10,7 +10,7 @@
 package com.labijie.infra.orm.dynamodb
 
 
-interface IDynamoRangeKeyQueryBuilder : IDynamoExactKeyQueryBuilder {
+interface IDynamoRangeKeyQueryBuilder<PK, SK> : IDynamoExactKeyQueryBuilder<PK, SK> {
 
     //number
     infix fun <R : IColumnBounded<R, TValue>, TValue> R.greater(value: TValue) = BinaryExpr(this.getColumn().colExpr(), value.valueExpr(this.getColumn()), BinaryOp.Gt)

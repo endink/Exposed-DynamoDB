@@ -11,12 +11,12 @@ package com.labijie.infra.orm.dynamodb.builder
 
 import com.labijie.infra.orm.dynamodb.*
 import com.labijie.infra.orm.dynamodb.exception.DynamoException
+import com.labijie.infra.orm.dynamodb.exception.DynamodbExpressionFormatException
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue
 import software.amazon.awssdk.services.dynamodb.model.GetItemRequest
-import software.amazon.awssdk.services.dynamodb.model.KeysAndAttributes
 
 
-class DynamoGetBuilder(table: DynamoTable) : ProjectionBaseBuilder(table) {
+class DynamoGetBuilder<PK, SK>(table: DynamoTable<PK, SK>) : ProjectionBaseBuilder(table) {
 
     private val keys: MutableMap<String, AttributeValue> = mutableMapOf()
 
@@ -27,9 +27,26 @@ class DynamoGetBuilder(table: DynamoTable) : ProjectionBaseBuilder(table) {
         }
     }
 
+    fun keys(partitionKey: PK, sortKey: SK?): DynamoGetBuilder<PK, SK> {
+        keys.clear()
+        val pk = table.primaryKey.partitionKey.getColumn()
 
-    fun keys(block: IDynamoExactKeyQueryBuilder.() -> DynamoExpression<Boolean>): DynamoGetBuilder {
-        val expr = block.invoke(IDynamoExactKeyQueryBuilder.NULL)
+        keys.put(pk.name, pk.toDbValue(partitionKey))
+
+        table.primaryKey.sortKey?.let {
+            sk->
+            if(sortKey != null) {
+                val col = sk.getColumn()
+                keys.put(col.name, col.toDbValue(sortKey))
+            }else {
+                throw DynamodbExpressionFormatException.sortKeyMissed(table.tableName)
+            }
+        }
+        return this
+    }
+
+    fun keys(block: IDynamoExactKeyQueryBuilder<PK, SK>.() -> DynamoExpression<Boolean>): DynamoGetBuilder<PK, SK> {
+        val expr = block.invoke(IDynamoExactKeyQueryBuilder.default())
         keys.clear()
         IDynamoExactKeyQueryBuilder.extractKeys(expr, keys)
 

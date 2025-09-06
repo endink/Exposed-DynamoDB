@@ -16,7 +16,7 @@ object TableRegistry {
 
     val tables: ConcurrentHashMap<String, MutableList<TableRegistration>> = ConcurrentHashMap()
 
-    fun registryTable(table: DynamoTable) {
+    fun registryTable(table: DynamoTable<*, *>) {
         val set = this.tables.getOrPut(table.tableName) { mutableListOf() }
         val table = TableRegistration(table)
         if(!set.contains(table)) {

@@ -12,10 +12,14 @@ package com.labijie.infra.orm.dynamodb
 import com.labijie.infra.orm.dynamodb.exception.DynamodbExpressionFormatException
 
 
-interface IDynamoFilterBuilder : IDynamoRangeKeyQueryBuilder {
+interface IDynamoFilterBuilder<PK, SK> : IDynamoRangeKeyQueryBuilder<PK, SK> {
 
     companion object {
-        internal val NULL = object : IDynamoFilterBuilder {}
+        private val NULL = object : IDynamoFilterBuilder<Any, Any> {}
+        fun <PK, SK> default(): IDynamoFilterBuilder<PK, SK> {
+            @Suppress("UNCHECKED_CAST")
+            return NULL as IDynamoFilterBuilder<PK, SK>
+        }
     }
 
     infix fun DynamoColumn<String>.contains(substr: String) =
@@ -82,5 +86,37 @@ interface IDynamoFilterBuilder : IDynamoRangeKeyQueryBuilder {
 
     infix fun <T: Number> FunctionExpr<T>.eq(value: T) = BinaryExpr(this, value.valueExpr(), BinaryOp.Eq)
     infix fun <T: Number> FunctionExpr<T>.neq(value: T) = BinaryExpr(this, value.valueExpr(), BinaryOp.Neq)
+
+    //逻辑表达式帮助器
+    fun <TValue> DynamoExpression<Boolean>.orIfNotNull(value: TValue?, condition: (value: TValue)-> DynamoExpression<Boolean>): DynamoExpression<Boolean> {
+        return value?.let {
+            val right =condition.invoke(it)
+            BinaryExpr(this, right, BinaryOp.Or)
+        } ?: this
+    }
+
+    fun DynamoExpression<Boolean>.orIfNotNullOrBlank(value: String?, condition: (value: String)-> DynamoExpression<Boolean>): DynamoExpression<Boolean> {
+        if(value.isNullOrBlank()) {
+            return this
+        }
+        val right =condition.invoke(value)
+        return BinaryExpr(this, right, BinaryOp.Or)
+    }
+
+    fun <TValue> DynamoExpression<Boolean>.andIfNotNullOrEmpty(value: Collection<TValue>?, condition: (value: Collection<TValue>)-> DynamoExpression<Boolean>): DynamoExpression<Boolean> {
+        if(value.isNullOrEmpty()) {
+            return this
+        }
+        val right =condition.invoke(value)
+        return BinaryExpr(this, right, BinaryOp.And)
+    }
+
+    fun <TValue> DynamoExpression<Boolean>.orIfNotNullOrEmpty(value: Collection<TValue>?, condition: (value: Collection<TValue>)-> DynamoExpression<Boolean>): DynamoExpression<Boolean> {
+        if(value.isNullOrEmpty()) {
+            return this
+        }
+        val right =condition.invoke(value)
+        return BinaryExpr(this, right, BinaryOp.Or)
+    }
 
 }

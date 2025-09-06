@@ -15,5 +15,5 @@ object DynamoMapperRegistry {
 
     val mappers: MutableSet<IDynamoDbMapper> = mutableSetOf()
 
-    fun registerMapper(table: DynamoTable) {}
+    fun registerMapper(table: DynamoTable<*, *>) {}
 }

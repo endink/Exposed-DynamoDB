@@ -14,7 +14,7 @@ import com.labijie.infra.orm.dynamodb.*
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue
 
 
-open class DynamoConditionBuilder :
+open class DynamoConditionBuilder<PK, SK> :
     IDynamoWriteBuilder {
 
     data class BuildResult(
@@ -25,16 +25,16 @@ open class DynamoConditionBuilder :
 
 
     fun keys(
-        keyExpression: IDynamoExactKeyQueryBuilder.() -> DynamoExpression<Boolean>
-    ): DynamoConditionBuilder {
+        keyExpression: IDynamoExactKeyQueryBuilder<PK, SK>.() -> DynamoExpression<Boolean>
+    ): DynamoConditionBuilder<PK, SK> {
         keys.clear()
-        val keyExpr = keyExpression.invoke(IDynamoExactKeyQueryBuilder.NULL)
+        val keyExpr = keyExpression.invoke(IDynamoExactKeyQueryBuilder.default())
         IDynamoExactKeyQueryBuilder.extractKeys(keyExpr, keys)
         return this
     }
 
-    fun condition(where: IDynamoFilterBuilder.() -> DynamoExpression<Boolean>): DynamoConditionBuilder {
-        conditionExpression = where.invoke(IDynamoFilterBuilder.NULL)
+    fun condition(where: IDynamoFilterBuilder<PK, SK>.() -> DynamoExpression<Boolean>): DynamoConditionBuilder<PK, SK> {
+        conditionExpression = where.invoke(IDynamoFilterBuilder.default())
         return this
     }
 

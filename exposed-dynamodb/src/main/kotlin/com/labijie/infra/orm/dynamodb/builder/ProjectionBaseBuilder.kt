@@ -13,7 +13,7 @@ import com.labijie.infra.orm.dynamodb.*
 import com.labijie.infra.orm.dynamodb.exception.DynamodbTypeMismatchException
 
 
-abstract class ProjectionBaseBuilder(protected val table: DynamoTable) {
+abstract class ProjectionBaseBuilder(protected val table: DynamoTable<*, *>) {
 
     private val selective: MutableSet<IDynamoProjection> = mutableSetOf()
 
@@ -30,7 +30,7 @@ abstract class ProjectionBaseBuilder(protected val table: DynamoTable) {
         for (p in selective) {
             when (p) {
                 is DynamoColumn<*> -> list.add(ctx.placeName(p))
-                is DynamoTable -> {
+                is DynamoTable<*, *> -> {
                     p.columns.forEach { column ->
                         list.add(ctx.placeName(column))
                     }
@@ -50,8 +50,8 @@ abstract class ProjectionBaseBuilder(protected val table: DynamoTable) {
 
         fun projectKeyOnly(): ProjectionBuilder {
             selective.clear()
-            table.keys.partitionKey.getColumn().addProjection()
-            table.keys.sortKey?.getColumn()?.addProjection()
+            table.primaryKey.partitionKey.getColumn().addProjection()
+            table.primaryKey.sortKey?.getColumn()?.addProjection()
             return this
         }
 

@@ -10,10 +10,12 @@
 package com.labijie.infra.orm.dynamodb.testing
 
 import com.labijie.infra.orm.dynamodb.DynamoTable
+import com.labijie.infra.orm.dynamodb.IColumnIndexable
+import com.labijie.infra.orm.dynamodb.StringKeysDynamoTable
 import software.amazon.awssdk.services.dynamodb.model.ProjectionType
 
 
-object Table1 : DynamoTable("bigtable") {
+object Table1 : StringKeysDynamoTable("bigtable1") {
 
     val pk = string("PK")
     val sk = string("SK")
@@ -27,12 +29,20 @@ object Table1 : DynamoTable("bigtable") {
     val listVale = list("list_value")
     val mapVal = map("map_value")
 
-    override val keys: DynamoKeys
+    override val keys: DynamoKeys<String, String>
         get() = DynamoKeys(pk, sk)
+
+    override fun partitionKey(): IColumnIndexable<*, String> {
+        return pk
+    }
+
+    override fun sortKey(): IColumnIndexable<*, String>? {
+        return sk
+    }
 }
 
 
-object TestTable : DynamoTable("test_table") {
+object TestTable : StringKeysDynamoTable("test_table") {
 
     // Primary key
     val pk = string("pk")            // partition key
@@ -58,6 +68,35 @@ object TestTable : DynamoTable("test_table") {
     val listValue = list("list_value")
     val mapValue = map("map_value")
 
-    override val keys: DynamoKeys
-        get() = DynamoKeys(pk, sk)
+    override fun partitionKey(): IColumnIndexable<*, String> {
+        return pk
+    }
+
+    override fun sortKey(): IColumnIndexable<*, String>? {
+        return sk
+    }
 }
+
+class TestEntity(
+    // Primary Key
+    var pk: String = "",
+    var sk: String = "",
+
+    var name: String? = null,
+    var boolValue: Boolean? = null,
+    var intValue: Int? = null,
+    var floatValue: Float? = null,
+    var doubleValue: Double? = null,
+    var shortValue: Short? = null,
+    var longValue: Long? = null,
+    var stringValue: String? = null,
+
+    var stringSet: Set<String>? = null,
+    var numberSet: Set<Number>? = null,
+
+    var binaryValue: ByteArray? = null,
+    var binarySet: Set<ByteArray>? = null,
+
+    var listValue: List<Any?>? = null,
+    var mapValue: Map<String, Any?>? = null
+)

@@ -27,4 +27,12 @@ open class DynamodbTypeMismatchException(
 open class DynamodbExpressionFormatException(
     message: String? = null,
     cause: Throwable? = null
-) : DynamoException(message, cause)
+) : DynamoException(message, cause) {
+    companion object {
+        fun sortKeyMissed(tableName: String): DynamodbExpressionFormatException {
+            return DynamodbExpressionFormatException( "Query operation must include a sort key condition. " +
+                    "The table '${tableName}' has a composite primary key (pk + sk), " +
+                    "so you must specify both partition key and sort key in the query.")
+        }
+    }
+}

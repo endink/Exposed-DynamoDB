@@ -13,7 +13,7 @@ import com.labijie.infra.orm.dynamodb.builder.DynamoUpdateBuilder
 
 
 internal fun IDynamodbUpdateBuilder.addExpression(value: DynamoUpdateExpression<*>) {
-    if(this is DynamoUpdateBuilder.DynamoSegmentsBuilder) {
+    if(this is DynamoUpdateBuilder<*, *>.DynamoSegmentsBuilder) {
         this.expressions.add(value)
     }
 }

@@ -78,19 +78,6 @@ fun DynamoColumn<*>.toDbValue(value: Any?): AttributeValue {
     return av
 }
 
-fun <T : Any> Map<String, AttributeValue>.readValue(
-    tableName: String,
-    valueFactory: () -> T,
-    mapper: ((Map<String, AttributeValue>, T) -> Unit)?
-): T {
-    val v = valueFactory.invoke()
-    if (mapper == null) {
-        ReflectionDynamoDbMapper.populateFromDb(tableName, v, this)
-    } else {
-        mapper.invoke(this, v)
-    }
-    return v
-}
 
 fun Delete.request(
     returnValue: ReturnValue = ReturnValue.NONE,

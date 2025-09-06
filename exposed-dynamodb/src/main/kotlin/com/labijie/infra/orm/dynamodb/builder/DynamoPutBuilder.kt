@@ -15,7 +15,7 @@ import software.amazon.awssdk.services.dynamodb.model.Put
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest
 import software.amazon.awssdk.services.dynamodb.model.ReturnValue
 
-class DynamoPutBuilder(internal val table: DynamoTable) {
+class DynamoPutBuilder<PK, SK>(internal val table: DynamoTable<PK, SK>) {
     internal val values = mutableMapOf<DynamoColumn<*>, Any?>()
     private var conditionExpression: DynamoExpression<Boolean>? = null
 
@@ -69,8 +69,8 @@ class DynamoPutBuilder(internal val table: DynamoTable) {
         return put
     }
 
-    fun condition(where: IDynamoFilterBuilder.() -> DynamoExpression<Boolean>): DynamoPutBuilder {
-        conditionExpression = where.invoke(IDynamoFilterBuilder.NULL)
+    fun condition(where: IDynamoFilterBuilder<PK, SK>.() -> DynamoExpression<Boolean>): DynamoPutBuilder<PK, SK> {
+        conditionExpression = where.invoke(IDynamoFilterBuilder.default())
         return this
     }
 

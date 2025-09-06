@@ -15,20 +15,25 @@ import software.amazon.awssdk.services.dynamodb.model.ProjectionType
 import java.util.UUID
 
 @Suppress("SameParameterValue")
-abstract class DynamoTable(val tableName: String) : IDynamoProjection {
+abstract class DynamoTable<TPartitionKey, TSortKey>(val tableName: String) : IDynamoProjection {
 
-    data class DynamoKeys(val partitionKey: IColumnIndexable<*, *>, val sortKey: IColumnIndexable<*, *>? = null)
+    open class DynamoKeys<TPartitionKey, TSortKey>(val partitionKey: IColumnIndexable<*, TPartitionKey>, val sortKey: IColumnIndexable<*, TSortKey>? = null)
 
     val columns = mutableSetOf<DynamoColumn<*>>()
     val indexes = mutableMapOf<String, DynamoIndex>()
 
-    val columnNames = mutableSetOf<String>()
+    internal val columnNames = mutableMapOf<String, DynamoColumn<*>>()
 
     init {
         TableRegistry.registryTable(this)
     }
 
-    abstract val keys: DynamoKeys
+
+    internal val primaryKey by lazy {
+        keys
+    }
+
+    protected abstract val keys: DynamoKeys<out TPartitionKey, out TSortKey>
 
     fun <C : IColumnIndexable<C, TValue>, TValue> C.index(
         indexName: String,
@@ -55,9 +60,10 @@ abstract class DynamoTable(val tableName: String) : IDynamoProjection {
     }
 
     private fun addColumn(column: DynamoColumn<*>) {
-        if (!columnNames.add(column.name)) {
-            throw IllegalArgumentException("Column '${column.name}' already existed in table $tableName")
+        if (columnNames.containsKey(column.name)) {
+            throw IllegalArgumentException("Column '${column.name}' already existed in table '$tableName'.")
         }
+        columnNames[column.name] = column
         columns.add(column)
     }
 

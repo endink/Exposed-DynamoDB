@@ -10,20 +10,17 @@
 package com.labijie.infra.orm.dynamodb
 
 import com.labijie.infra.orm.dynamodb.builder.*
-import com.labijie.infra.orm.dynamodb.mapping.ReflectionDynamoDbMapper
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue
 import software.amazon.awssdk.services.dynamodb.model.ConditionCheck
 import software.amazon.awssdk.services.dynamodb.model.Put
 
 
-
-fun <T : DynamoTable> T.batchGet(build:  DynamoBatchGetBuilder.Context.()-> Unit?): DynamoBatchGetBuilder {
+fun <T : DynamoTable<PK, SK>, PK, SK> T.batchGet(build:  DynamoBatchGetBuilder<PK, SK>.Context.()-> Unit?): DynamoBatchGetBuilder<PK, SK> {
     val builder = DynamoBatchGetBuilder(this)
     build.invoke(builder.context)
     return builder
 }
 
-fun <T : DynamoTable> T.get(projectType: DynamoProjectionType = DynamoProjectionType.TableOnly): DynamoGetBuilder {
+fun <T : DynamoTable<PK, SK>, PK, SK> T.get(projectType: DynamoProjectionType = DynamoProjectionType.TableOnly): DynamoGetBuilder<PK, SK> {
     val builder = DynamoGetBuilder(this)
     val projection = builder.projection()
     when (projectType) {
@@ -34,14 +31,14 @@ fun <T : DynamoTable> T.get(projectType: DynamoProjectionType = DynamoProjection
     return builder
 }
 
-fun <T : DynamoTable> T.get(projection: ProjectionBaseBuilder.ProjectionBuilder.()-> Unit): DynamoGetBuilder {
+fun <T : DynamoTable<PK, SK>, PK, SK> T.get(projection: ProjectionBaseBuilder.ProjectionBuilder.()-> Unit): DynamoGetBuilder<PK, SK> {
     val builder = DynamoGetBuilder(this)
     val instance = builder.projection()
     projection.invoke(instance)
     return builder
 }
 
-fun <T : DynamoTable> T.query(projectType: DynamoProjectionType = DynamoProjectionType.TableOnly): DynamoQueryBuilder {
+fun <T : DynamoTable<PK, SK>, PK, SK> T.query(projectType: DynamoProjectionType = DynamoProjectionType.TableOnly): DynamoQueryBuilder<PK, SK> {
     val builder = DynamoQueryBuilder(this)
     val projection = builder.projection()
     when (projectType) {
@@ -52,18 +49,18 @@ fun <T : DynamoTable> T.query(projectType: DynamoProjectionType = DynamoProjecti
     return builder
 }
 
-fun <T : DynamoTable> T.query(projection: ProjectionBaseBuilder.ProjectionBuilder.()-> Unit): DynamoQueryBuilder {
+fun <T : DynamoTable<PK, SK>, PK, SK> T.query(projection: ProjectionBaseBuilder.ProjectionBuilder.()-> Unit): DynamoQueryBuilder<PK, SK> {
     val builder = DynamoQueryBuilder(this)
     val instance = builder.projection()
     projection.invoke(instance)
     return builder
 }
 
-fun <T : DynamoTable> T.putIfNotExist(
-    block: T.(dsl: DynamoPutBuilder.DynamoUpdateSetter) -> Unit
+fun <T : DynamoTable<PK, SK>, PK, SK> T.putIfNotExist(
+    block: T.(dsl: DynamoPutBuilder<PK, SK>.DynamoUpdateSetter) -> Unit
 ): Put {
-    val pk = this.keys.partitionKey
-    val sk = this.keys.sortKey
+    val pk = this.primaryKey.partitionKey
+    val sk = this.primaryKey.sortKey
 
     val dsl = DynamoPutBuilder(this)
     dsl.condition {
@@ -76,9 +73,9 @@ fun <T : DynamoTable> T.putIfNotExist(
     return dsl.build()
 }
 
-fun <T : DynamoTable> T.put(
-    block: T.(dsl: DynamoPutBuilder.DynamoUpdateSetter) -> Unit
-): DynamoPutBuilder {
+fun <T : DynamoTable<PK, SK>, PK, SK> T.put(
+    block: T.(dsl: DynamoPutBuilder<PK, SK>.DynamoUpdateSetter) -> Unit
+): DynamoPutBuilder<PK, SK> {
     val dsl = DynamoPutBuilder(this)
     block.invoke(this, dsl.setter)
 
@@ -86,8 +83,8 @@ fun <T : DynamoTable> T.put(
 }
 
 
-fun <T: DynamoTable> T.check(where: DynamoConditionBuilder.() -> DynamoConditionBuilder): ConditionCheck {
-    val builder = DynamoConditionBuilder()
+fun <T: DynamoTable<PK, SK>, PK, SK> T.check(where: DynamoConditionBuilder<PK, SK>.() -> DynamoConditionBuilder<PK, SK>): ConditionCheck {
+    val builder = DynamoConditionBuilder<PK, SK>()
     where.invoke(builder)
     val result = builder.buildCondition()
 
@@ -106,18 +103,18 @@ fun <T: DynamoTable> T.check(where: DynamoConditionBuilder.() -> DynamoCondition
 }
 
 
-fun <T : DynamoTable> T.delete(
-    where: DynamoConditionBuilder.() -> DynamoConditionBuilder
-): DynamoDeleteBuilder {
+fun <T: DynamoTable<PK, SK>, PK, SK> T.delete(
+    where: DynamoConditionBuilder<PK, SK>.() -> DynamoConditionBuilder<PK, SK>
+): DynamoDeleteBuilder<PK, SK> {
     val builder = DynamoDeleteBuilder(this)
     where.invoke(builder.condition)
     return builder
 }
 
-fun <T : DynamoTable> T.update(
-    where: DynamoConditionBuilder.() -> DynamoConditionBuilder,
-    block: DynamoUpdateBuilder.DynamoSegmentsBuilder.(getter: DynamoUpdateGetter) -> Unit
-): DynamoUpdateBuilder {
+fun <T: DynamoTable<PK, SK>, PK, SK> T.update(
+    where: DynamoConditionBuilder<PK, SK>.() -> DynamoConditionBuilder<PK, SK>,
+    block: DynamoUpdateBuilder<PK, SK>.DynamoSegmentsBuilder.(getter: DynamoUpdateGetter<PK, SK>) -> Unit
+): DynamoUpdateBuilder<PK, SK> {
 
     val builder = DynamoUpdateBuilder(this)
 

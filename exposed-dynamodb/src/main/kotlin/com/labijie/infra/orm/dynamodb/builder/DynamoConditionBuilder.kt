@@ -32,7 +32,7 @@ open class DynamoConditionBuilder<PK, SK>(private val table: DynamoTable<PK, SK>
         keys.put(pk.name, pk.toDbValue(partitionKey))
 
         table.primaryKey.sortKey?.let {
-                sk->
+            sk->
             if(sortKey != null) {
                 val col = sk.getColumn()
                 keys.put(col.name, col.toDbValue(sortKey))

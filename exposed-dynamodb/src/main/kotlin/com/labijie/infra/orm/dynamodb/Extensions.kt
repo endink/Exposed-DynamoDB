@@ -10,6 +10,7 @@
 package com.labijie.infra.orm.dynamodb
 
 import com.labijie.infra.orm.dynamodb.exception.DynamodbTypeMismatchException
+import com.labijie.infra.orm.dynamodb.execution.LastEvaluatedKeyCodec
 import com.labijie.infra.orm.dynamodb.mapping.ReflectionDynamoDbMapper
 import software.amazon.awssdk.services.dynamodb.model.*
 
@@ -141,4 +142,8 @@ fun Put.request(
             this
         }
         .build()
+}
+
+fun QueryResponse.encodeLastEvaluatedKey(): String {
+    return LastEvaluatedKeyCodec.encode(this.lastEvaluatedKey())
 }

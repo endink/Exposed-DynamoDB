@@ -11,5 +11,5 @@ package com.labijie.infra.orm.dynamodb.exception
 
 
 class DynamoNameFormatException(name: String) :
-    DynamodbException("Invalid DynamoDB name: '$name'. " +
+    DynamoException("Invalid DynamoDB name: '$name'. " +
             "Table or index name must be 3-255 characters, attribute name must be 1-255 characters and contain only letters, digits, '_', '-', or '.'")

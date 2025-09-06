@@ -5,6 +5,8 @@ object Versions {
     const val infraBom = "3.5.3"
     const val springBoot = infraBom
 
+    const val graalvmSvm = "24.2.1"
+
     const val mysqlVersion="8.2.0"
 
     const val framework = "3.3.+"

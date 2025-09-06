@@ -10,6 +10,7 @@
 package com.labijie.infra.orm.dynamodb
 
 import com.labijie.infra.orm.dynamodb.exception.DynamodbTypeMismatchException
+import com.labijie.infra.orm.dynamodb.mapping.ReflectionDynamoDbMapper
 import software.amazon.awssdk.services.dynamodb.model.*
 
 
@@ -66,7 +67,7 @@ private fun DynamoColumn<*>.checkColumnValue(value: Any) {
 }
 
 
-internal fun DynamoColumn<*>.toDbValue(value: Any?): AttributeValue {
+fun DynamoColumn<*>.toDbValue(value: Any?): AttributeValue {
     val av = if (value == null) {
         AttributeValue.builder().nul(true).build()
     } else {
@@ -77,9 +78,23 @@ internal fun DynamoColumn<*>.toDbValue(value: Any?): AttributeValue {
     return av
 }
 
+fun <T : Any> Map<String, AttributeValue>.readValue(
+    tableName: String,
+    valueFactory: () -> T,
+    mapper: ((Map<String, AttributeValue>, T) -> Unit)?
+): T {
+    val v = valueFactory.invoke()
+    if (mapper == null) {
+        ReflectionDynamoDbMapper.populateFromDb(tableName, v, this)
+    } else {
+        mapper.invoke(this, v)
+    }
+    return v
+}
+
 fun Delete.request(
     returnValue: ReturnValue = ReturnValue.NONE,
-    customizer: (DeleteItemRequest.Builder.() -> DeleteItemRequest.Builder)? = null
+    customizer: (DeleteItemRequest.Builder.() -> Unit)? = null
 ): DeleteItemRequest {
 
     val delete = this
@@ -92,13 +107,16 @@ fun Delete.request(
         .ifNotNullOrEmpty(delete.expressionAttributeNames()) { expressionAttributeNames(it) }
         .returnValuesOnConditionCheckFailure(this.returnValuesOnConditionCheckFailure())
         .returnValues(returnValue)
-        .ifNotNull(customizer) { it.invoke(this) }
+        .ifNotNull(customizer) {
+            it.invoke(this)
+            this
+        }
         .build()
 }
 
 fun Update.request(
     returnValue: ReturnValue = ReturnValue.NONE,
-    customizer: (UpdateItemRequest.Builder.() -> UpdateItemRequest.Builder)? = null
+    customizer: (UpdateItemRequest.Builder.() -> Unit)? = null
 ): UpdateItemRequest {
     val update = this
     return UpdateItemRequest.builder()
@@ -110,13 +128,16 @@ fun Update.request(
         .ifNotNullOrEmpty(update.expressionAttributeNames()) { expressionAttributeNames(it) }
         .returnValuesOnConditionCheckFailure(this.returnValuesOnConditionCheckFailure())
         .returnValues(returnValue)
-        .ifNotNull(customizer) { it.invoke(this) }
+        .ifNotNull(customizer) {
+            it.invoke(this)
+            this
+        }
         .build()
 }
 
 fun Put.request(
     returnValue: ReturnValue = ReturnValue.NONE,
-    customizer: (PutItemRequest.Builder.() -> PutItemRequest.Builder)? = null
+    customizer: (PutItemRequest.Builder.() -> Unit)? = null
 ): PutItemRequest {
 
     val put = this
@@ -128,6 +149,9 @@ fun Put.request(
         .ifNotNullOrEmpty(put.expressionAttributeNames()) { expressionAttributeNames(it) }
         .returnValuesOnConditionCheckFailure(this.returnValuesOnConditionCheckFailure())
         .returnValues(returnValue)
-        .ifNotNull(customizer) { it.invoke(this) }
+        .ifNotNull(customizer) {
+            it.invoke(this)
+            this
+        }
         .build()
 }

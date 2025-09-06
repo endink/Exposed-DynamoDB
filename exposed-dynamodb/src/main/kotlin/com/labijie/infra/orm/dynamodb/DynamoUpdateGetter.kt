@@ -12,7 +12,7 @@ package com.labijie.infra.orm.dynamodb
 import com.labijie.infra.orm.dynamodb.builder.DynamoUpdateBuilder
 
 
-class DynamoUpdateGetter(private val builder: DynamoUpdateBuilder) {
+class DynamoUpdateGetter(private val builder: DynamoUpdateBuilder.DynamoSegmentsBuilder) {
 
     operator fun <T> set(column: DynamoColumn<T>, value: T?) {
         builder.addExpression(SetExpr(column.colExpr(), ValueExpr(value, column)))

@@ -15,10 +15,23 @@ import software.amazon.awssdk.services.dynamodb.model.Put
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest
 import software.amazon.awssdk.services.dynamodb.model.ReturnValue
 
-class DynamoPutBuilder(val table: DynamoTable) {
+class DynamoPutBuilder(internal val table: DynamoTable) {
     internal val values = mutableMapOf<DynamoColumn<*>, Any?>()
     private var conditionExpression: DynamoExpression<Boolean>? = null
 
+    internal val setter by lazy {
+        DynamoUpdateSetter()
+    }
+
+    val tableName: String
+        get() = table.tableName
+
+    inner class DynamoUpdateSetter internal constructor() {
+        // support it[column] = value
+        operator fun <TValue> set(column: DynamoColumn<TValue>, value: TValue?) {
+            values[column] = value
+        }
+    }
 
     private fun buildSetter(): Map<String, AttributeValue> {
         val result = LinkedHashMap<String, AttributeValue>(values.size)
@@ -61,7 +74,7 @@ class DynamoPutBuilder(val table: DynamoTable) {
         return this
     }
 
-    fun request(returnValue: ReturnValue = ReturnValue.NONE, customizer: (PutItemRequest.Builder.()-> PutItemRequest.Builder)? = null): PutItemRequest {
+    fun request(returnValue: ReturnValue = ReturnValue.NONE, customizer: (PutItemRequest.Builder.()-> Unit)? = null): PutItemRequest {
         val put = build()
 
         return put.request(returnValue, customizer)

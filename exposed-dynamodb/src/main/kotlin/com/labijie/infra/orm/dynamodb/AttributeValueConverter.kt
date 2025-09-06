@@ -154,13 +154,16 @@ object AttributeValueConverter {
                         throw DynamodbTypeMismatchException("Unsupported NUMBER mapping: expected NumericColumn, but got hint type ${hint::class.simpleName}")
                     }
                     // 根据 hint 提示的 Kotlin 类型决定返回什么
-                    when (hint.javaClass) {
-                        Int::class.java -> n.toInt()
-                        Long::class.java -> n.toLong()
-                        Float::class.java -> n.toFloat()
-                        Short::class.java -> n.toShort()
-                        Double::class.java -> n.toDouble()
-                        else -> throw DynamodbTypeMismatchException("Unsupported NUMBER mapping: expected Int/Long/Float/Short/Double, but got hint type ${hint::class.simpleName}")
+                    try {
+                        when (hint.type) {
+                            NumericColumn.NumericType.Long -> n.toLong()
+                            NumericColumn.NumericType.Int -> n.toInt()
+                            NumericColumn.NumericType.Float -> n.toFloat()
+                            NumericColumn.NumericType.Double -> n.toDouble()
+                            NumericColumn.NumericType.Short -> n.toShort()
+                        }
+                    }catch (_: NumberFormatException) {
+                        throw DynamodbTypeMismatchException("Unsupported NUMBER mapping: expected ${hint.type}, but got value '${n}'")
                     }
                 }
             }
@@ -208,18 +211,21 @@ object AttributeValueConverter {
     }
 
     fun fromDb(value: AttributeValue): Any? {
-        return when {
-            value.s() != null -> value.s()
-            value.n() != null -> value.n().toDouble()   // 这里默认解析为 Double，可根据列 hint 转换成 Int/Long/Float
-            value.bool() != null -> value.bool()
-            value.nul() == true -> null
-            value.b() != null -> value.b().asByteArray()
-            value.ss() != null -> value.ss().toSet()
-            value.ns() != null -> value.ns().map { it.toDouble() }.toSet()   // 默认 Double，可按列 hint 转换
-            value.bs() != null -> value.bs().map { it.asByteArray() }.toSet()
-            value.l() != null -> value.l().map { fromDb(it) }
-            value.m() != null -> value.m().mapValues { fromDb(it.value) }
-            else -> throw DynamodbTypeMismatchException("Unsupported AttributeValue: $value")
+        return when (value.type()) {
+            AttributeValue.Type.S -> value.s()
+            AttributeValue.Type.N -> value.n()?.toDoubleOrNull()
+            AttributeValue.Type.B -> value.b().asByteArray()
+            AttributeValue.Type.SS -> value.ss()?.mapNotNull { it }?.toSet()  ?: emptySet<String>()
+            AttributeValue.Type.NS -> value.ns()?.mapNotNull { it.toDoubleOrNull() }?.toSet() ?: emptySet<Double>()
+            AttributeValue.Type.BS -> value.bs()?.map { it?.asByteArray() }?.toSet() ?: emptySet<ByteArray>()
+            AttributeValue.Type.M -> value.m()?.map {
+                val k = it.key
+                val v = fromDb(it.value)
+                k to v
+            }?.toMap()
+            AttributeValue.Type.L -> value.l()?.map { fromDb(it) }
+            AttributeValue.Type.NUL -> null
+            else -> null
         }
     }
 

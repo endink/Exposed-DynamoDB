@@ -11,8 +11,9 @@ package com.labijie.infra.orm.dynamodb.exception
 
 
 class DuplicateDynamoIndexException(
-    val indexName: String,
-    val columnName: String
-) : RuntimeException(
-    "Duplicate index detected: index '$indexName' already exists for column '$columnName'."
+    tableName: String,
+    indexName: String,
+    columnName: String
+) : DynamoException(
+    "Duplicate index detected in '${tableName}': index '$indexName' already exists for column '$columnName'."
 )

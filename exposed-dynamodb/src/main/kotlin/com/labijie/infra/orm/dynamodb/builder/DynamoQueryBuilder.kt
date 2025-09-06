@@ -2,8 +2,10 @@ package com.labijie.infra.orm.dynamodb.builder
 
 import com.labijie.infra.orm.dynamodb.*
 import com.labijie.infra.orm.dynamodb.DynamodbUtils.prettyString
-import com.labijie.infra.orm.dynamodb.exception.DynamodbException
+import com.labijie.infra.orm.dynamodb.exception.DynamoException
+import com.labijie.infra.orm.dynamodb.execution.LastEvaluatedKeyCodec
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue
 import software.amazon.awssdk.services.dynamodb.model.QueryRequest
 
 /**
@@ -24,8 +26,22 @@ open class DynamoQueryBuilder(table: DynamoTable) : ProjectionBaseBuilder(table)
     private var limit: Int? = null
     private var indexName: String? = null
     private var indexForward: Boolean = true
+    private var lastKey: Map<String, AttributeValue>? = null
 
+    fun lastKeys(keys: Map<String, AttributeValue>): DynamoQueryBuilder {
+        lastKey = keys
+        return this
+    }
 
+    fun lastKeys(encodedKeys: String): DynamoQueryBuilder {
+        lastKey = LastEvaluatedKeyCodec.decode(encodedKeys)
+        return this
+    }
+
+    fun limit(limit: Int): DynamoQueryBuilder {
+        this.limit = limit
+        return this
+    }
 
     fun orderByDesc() {
         indexForward = false
@@ -49,17 +65,11 @@ open class DynamoQueryBuilder(table: DynamoTable) : ProjectionBaseBuilder(table)
         return this
     }
 
-    private fun render(expression: DynamoExpression<Boolean>?, renderContext: RenderContext): String {
-        val expr = expression
-            ?: throw DynamodbException("No where clause defined")
 
-        return expr.render(renderContext)
-    }
-
-    fun request(customizer: (QueryRequest.Builder.()-> QueryRequest.Builder)? = null) : QueryRequest {
+    fun request(customizer: (QueryRequest.Builder.()-> Unit)? = null) : QueryRequest {
         val context = RenderContext(true)
 
-        val keyExpression = keyExpr?.render(context) ?: throw DynamodbException("No key clause defined.")
+        val keyExpression = keyExpr?.render(context) ?: throw DynamoException("No key clause defined.")
         val filterExpression = filterExpr?.render(context)
 
         val projectExpression = renderProjection(context)
@@ -74,7 +84,10 @@ open class DynamoQueryBuilder(table: DynamoTable) : ProjectionBaseBuilder(table)
             .ifNotNullOrEmpty(context.values) { expressionAttributeValues(it) }
             .ifNotNullOrEmpty(context.attributeNames) { expressionAttributeNames(it) }
             .scanIndexForward(indexForward)
-            .ifNotNull(customizer) { it.invoke(this) }
+            .ifNotNull(customizer) {
+                it.invoke(this)
+                this
+            }
             .build()
 
 

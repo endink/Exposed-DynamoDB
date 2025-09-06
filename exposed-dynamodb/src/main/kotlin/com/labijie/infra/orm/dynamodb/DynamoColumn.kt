@@ -49,14 +49,25 @@ open class DynamoColumn<TValue>(
 
     fun dynamoDbType(): String = dbType
     open val isEnum = false
+
+
 }
 
 
 
-open class NumericColumn<TValue : Number>(name: String, tableName: String, internal val javaType: Class<*>) :
+open class NumericColumn<TValue : Number>(name: String, tableName: String, val type: NumericType) :
     DynamoColumn<TValue>(name, tableName, DynamoDataType.NUMBER),
     IColumnBounded<NumericColumn<TValue>, TValue>,
-    IColumnIndexable<NumericColumn<TValue>, TValue>
+    IColumnIndexable<NumericColumn<TValue>, TValue> {
+
+    enum class NumericType {
+        Long,
+        Int,
+        Float,
+        Double,
+        Short,
+    }
+}
 
 
 

@@ -10,10 +10,10 @@
 package com.labijie.infra.orm.dynamodb.builder
 
 import com.labijie.infra.orm.dynamodb.*
-import com.labijie.infra.orm.dynamodb.exception.DynamodbException
-import com.labijie.infra.orm.dynamodb.exception.DynamodbTypeMismatchException
+import com.labijie.infra.orm.dynamodb.exception.DynamoException
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue
 import software.amazon.awssdk.services.dynamodb.model.GetItemRequest
+import software.amazon.awssdk.services.dynamodb.model.KeysAndAttributes
 
 
 class DynamoGetBuilder(table: DynamoTable) : ProjectionBaseBuilder(table) {
@@ -33,14 +33,15 @@ class DynamoGetBuilder(table: DynamoTable) : ProjectionBaseBuilder(table) {
         keys.clear()
         IDynamoExactKeyQueryBuilder.extractKeys(expr, keys)
 
-        if(keys.isEmpty()) throw DynamodbException("No key clause defined.")
+        if(keys.isEmpty()) throw DynamoException("No key clause defined.")
 
         return this
     }
 
-    fun request(customizer: (GetItemRequest.Builder.()-> GetItemRequest.Builder)? = null): GetItemRequest {
 
-        if(keys.isEmpty()) throw DynamodbException("No key clause defined.")
+    fun request(customizer: (GetItemRequest.Builder.()-> Unit)? = null): GetItemRequest {
+
+        if(keys.isEmpty()) throw DynamoException("No key clause defined.")
 
         val ctx = RenderContext(true)
         val projectionExpression = renderProjection(ctx)
@@ -50,7 +51,10 @@ class DynamoGetBuilder(table: DynamoTable) : ProjectionBaseBuilder(table) {
             .tableName(this.tableName)
             .ifNullOrBlankInput(projectionExpression) { projectionExpression(projectionExpression) }
             .ifNotNullOrEmpty(ctx.attributeNames) { expressionAttributeNames(ctx.attributeNames) }
-            .ifNotNull(customizer) { it.invoke(this) }
+            .ifNotNull(customizer) {
+                it.invoke(this)
+                this
+            }
             .build()
     }
 

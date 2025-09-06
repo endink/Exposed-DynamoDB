@@ -17,7 +17,7 @@ abstract class ProjectionBaseBuilder(protected val table: DynamoTable) {
 
     private val selective: MutableSet<IDynamoProjection> = mutableSetOf()
 
-    protected val tableName
+    val tableName
         get() = table.tableName
 
     protected fun IDynamoProjection.addProjection() {

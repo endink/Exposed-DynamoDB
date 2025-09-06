@@ -12,7 +12,7 @@ package com.labijie.infra.orm.dynamodb.exception
 import java.lang.RuntimeException
 
 
-open class DynamodbException(
+open class DynamoException(
     message: String? = null,
     cause: Throwable? = null
 ) : RuntimeException(message, cause)
@@ -21,10 +21,10 @@ open class DynamodbException(
 open class DynamodbTypeMismatchException(
     message: String? = null,
     cause: Throwable? = null
-) : DynamodbException(message, cause)
+) : DynamoException(message, cause)
 
 
 open class DynamodbExpressionFormatException(
     message: String? = null,
     cause: Throwable? = null
-) : DynamodbException(message, cause)
+) : DynamoException(message, cause)

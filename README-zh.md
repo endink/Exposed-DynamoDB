@@ -178,17 +178,15 @@ DynamodbSchemaUtils.createTableIfNotExist(client, TestTable)
 
 //GetItem    
 val got = TestTable.get().keys {
-    TestTable.name eq "bbb"
-    TestTable.listValue[2]["nested_key"]
+    (TestTable.pk eq "bbb") and (TestTable.sk eq "abcd")
 }
 client.getItem(got.request())
 
 //Query
 val query = TestTable.query().keys {
-    TestTable.name eq "bbb"
-    TestTable.listValue[2]["nested_key"]
+    (TestTable.pk eq "bbb") and (TestTable.sk beginWith "abc")
 }
-client.getItem(got.request())
+client.query(got.request())
 
 ```
 

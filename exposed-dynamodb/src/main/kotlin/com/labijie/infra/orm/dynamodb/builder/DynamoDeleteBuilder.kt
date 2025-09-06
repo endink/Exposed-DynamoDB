@@ -16,7 +16,7 @@ class DynamoDeleteBuilder<PK, SK>(internal val table: DynamoTable<PK, SK>) {
     val tableName: String = table.tableName
 
     internal val condition by lazy {
-        DynamoConditionBuilder<PK, SK>()
+        DynamoConditionBuilder(table)
     }
 
     fun request(returnValue: ReturnValue = ReturnValue.NONE, customizer: DeleteRequestCustomizer? = null): DeleteItemRequest {

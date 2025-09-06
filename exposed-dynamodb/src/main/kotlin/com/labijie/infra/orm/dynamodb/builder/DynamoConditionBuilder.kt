@@ -11,10 +11,11 @@
 package com.labijie.infra.orm.dynamodb.builder
 
 import com.labijie.infra.orm.dynamodb.*
+import com.labijie.infra.orm.dynamodb.exception.DynamodbExpressionFormatException
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue
 
 
-open class DynamoConditionBuilder<PK, SK> :
+open class DynamoConditionBuilder<PK, SK>(private val table: DynamoTable<PK, SK>) :
     IDynamoWriteBuilder {
 
     data class BuildResult(
@@ -23,6 +24,24 @@ open class DynamoConditionBuilder<PK, SK> :
     private val keys = mutableMapOf<String, AttributeValue>()
     private var conditionExpression: DynamoExpression<Boolean>? = null
 
+
+    fun keys(partitionKey: PK, sortKey: SK?): DynamoConditionBuilder<PK, SK> {
+        keys.clear()
+        val pk = table.primaryKey.partitionKey.getColumn()
+
+        keys.put(pk.name, pk.toDbValue(partitionKey))
+
+        table.primaryKey.sortKey?.let {
+                sk->
+            if(sortKey != null) {
+                val col = sk.getColumn()
+                keys.put(col.name, col.toDbValue(sortKey))
+            }else {
+                throw DynamodbExpressionFormatException.sortKeyMissed(table.tableName)
+            }
+        }
+        return this
+    }
 
     fun keys(
         keyExpression: IDynamoExactKeyQueryBuilder<PK, SK>.() -> DynamoExpression<Boolean>

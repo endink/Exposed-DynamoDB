@@ -84,7 +84,7 @@ fun <T : DynamoTable<PK, SK>, PK, SK> T.put(
 
 
 fun <T: DynamoTable<PK, SK>, PK, SK> T.check(where: DynamoConditionBuilder<PK, SK>.() -> DynamoConditionBuilder<PK, SK>): ConditionCheck {
-    val builder = DynamoConditionBuilder<PK, SK>()
+    val builder = DynamoConditionBuilder<PK, SK>(this)
     where.invoke(builder)
     val result = builder.buildCondition()
 

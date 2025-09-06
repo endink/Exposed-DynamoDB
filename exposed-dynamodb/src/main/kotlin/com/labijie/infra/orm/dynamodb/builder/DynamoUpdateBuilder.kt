@@ -28,7 +28,7 @@ class DynamoUpdateBuilder<PK, SK>(internal val table: DynamoTable<PK, SK>) {
     }
 
     internal val condition by lazy {
-        DynamoConditionBuilder<PK, SK>()
+        DynamoConditionBuilder(table)
     }
 
     fun request(returnValue: ReturnValue = ReturnValue.NONE, customizer: UpdateRequestCustomizer? = null): UpdateItemRequest {

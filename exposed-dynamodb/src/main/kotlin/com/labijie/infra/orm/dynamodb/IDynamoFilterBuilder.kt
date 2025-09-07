@@ -25,10 +25,10 @@ interface IDynamoFilterBuilder<PK, SK> : IDynamoRangeKeyQueryBuilder<PK, SK> {
     infix fun DynamoColumn<String>.contains(substr: String) =
         FunctionExpr<Boolean>("contains", listOf(this.colExpr(), substr.valueExpr(this)))
 
-    infix fun <TElement> DynamoSetColumn<TElement>.contains(value: TElement) =
+    infix fun <TElement> DynamoSetColumn<*, TElement>.contains(value: TElement) =
         FunctionExpr<Boolean>("contains", listOf(this.colExpr(), value.valueExpr(this)))
 
-    infix fun ListColumn.contains(substr: Any?) =
+    infix fun ListColumn<*>.contains(substr: Any?) =
         FunctionExpr<Boolean>("contains", listOf(this.colExpr(), substr.valueExpr(this)))
 
     // ----------------- Attribute Exists / Type -----------------
@@ -60,13 +60,13 @@ interface IDynamoFilterBuilder<PK, SK> : IDynamoRangeKeyQueryBuilder<PK, SK> {
     }
 
     // ----------------- Size Function -----------------
-    fun StringColumn.size(): FunctionExpr<Int> = FunctionExpr("size", listOf(this.colExpr()))
+    fun <T> StringColumn<T>.size(): FunctionExpr<Int> = FunctionExpr("size", listOf(this.colExpr()))
 
-    fun BinaryColumn.size(): FunctionExpr<Int> = FunctionExpr("size", listOf(this.colExpr()))
+    fun <T> BinaryColumn<T>.size(): FunctionExpr<Int> = FunctionExpr("size", listOf(this.colExpr()))
 
-    fun <T> ListColumn.size(): FunctionExpr<Int> = FunctionExpr("size", listOf(this.colExpr()))
-    fun <T> DynamoSetColumn<*>.size(): FunctionExpr<Int> = FunctionExpr("size", listOf(this.colExpr()))
-    fun <K, V> MapColumn.size(): FunctionExpr<Int> = FunctionExpr("size", listOf(this.colExpr()))
+    fun ListColumn<*>.size(): FunctionExpr<Int> = FunctionExpr("size", listOf(this.colExpr()))
+    fun DynamoSetColumn<*, *>.size(): FunctionExpr<Int> = FunctionExpr("size", listOf(this.colExpr()))
+    fun MapColumn<*>.size(): FunctionExpr<Int> = FunctionExpr("size", listOf(this.colExpr()))
 
 
     // ----------------- ValueExpr Extensions -----------------

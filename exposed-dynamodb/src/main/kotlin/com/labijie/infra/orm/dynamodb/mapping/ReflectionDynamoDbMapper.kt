@@ -23,7 +23,7 @@ object ReflectionDynamoDbMapper : IDynamoDbMapper {
         LoggerFactory.getLogger(ReflectionDynamoDbMapper::class.java)
     }
 
-    data class ValueField(val getter: Method, val setter: Method)
+    data class ValueField(val name: String, val getter: Method, val setter: Method)
 
     private val fieldToColumnCache = ConcurrentHashMap<String, DynamoColumn<*>?>()
     private val attributeToColumnCache = ConcurrentHashMap<String, DynamoColumn<*>?>()
@@ -80,8 +80,6 @@ object ReflectionDynamoDbMapper : IDynamoDbMapper {
     }
 
 
-
-
     private fun getFields(clazz: Class<*>): Map<String, ValueField> {
         return fieldsCache.getOrPut(clazz) {
             val methods = clazz.methods.filter { m ->
@@ -122,10 +120,18 @@ object ReflectionDynamoDbMapper : IDynamoDbMapper {
             for ((prop, g) in getters) {
                 val s = setters[prop]
                 if (s != null) {
-                    result[prop] = ValueField(g, s)
+                    result[prop] = ValueField(prop, g, s)
                 }
             }
             result
+        }
+    }
+
+    private fun ValueField.setValue(tableName: String, receiver: Any, value: Any?) {
+        try {
+            this.setter.invoke(receiver, value)
+        } catch (e: Throwable) {
+            logger.warn("DynamoDB table '$tableName' failed to set value (field: ${this.name}) '${value}'.\n${e.stackTraceToString()}")
         }
     }
 
@@ -135,27 +141,26 @@ object ReflectionDynamoDbMapper : IDynamoDbMapper {
         attributes: Map<String, AttributeValue>
     ) {
 
-        if(!TableRegistry.tables.containsKey(tableName)) {
+        if (!TableRegistry.tables.containsKey(tableName)) {
             logger.warn("DynamoDB table $tableName does not exist.")
             return
         }
 
-        attributes.forEach {
-            attributeValue->
+        attributes.forEach { attributeValue ->
             val columnName = attributeValue.key
-            findColumnByName(tableName, columnName)?.let {
-                c ->
-                findFiledByColumn(tableName, columnName)?.let {
-                    fieldName->
+            findColumnByName(tableName, columnName)?.let { c ->
+                findFiledByColumn(tableName, columnName)?.let { fieldName ->
                     val fields = getFields(value::class.java)
                     val field = fields[fieldName.lowercase()]
                     field?.let {
                         val v = c.valueFromDb(attributeValue.value)
                         if (v != null) {
-                            try {
-                                field.setter.invoke(value, v)
-                            } catch (e: Throwable) {
-                                logger.warn("DynamoDB table $tableName failed to set value (field: ${attributeValue.key}) '${attributeValue.value}'.\n${e.stackTraceToString()}")
+                            field.setValue(tableName, value, v)
+                        } else {
+                            if (c.nullable) {
+                                field.setValue(tableName, value, null)
+                            } else if (c.defaultValue != null) {
+                                field.setValue(tableName, value, c.defaultValue)
                             }
                         }
                     }
@@ -173,8 +178,7 @@ object ReflectionDynamoDbMapper : IDynamoDbMapper {
         val result = mutableMapOf<String, AttributeValue>()
 
         val fields = getFields(value::class.java)
-        fields.forEach {
-           field->
+        fields.forEach { field ->
             findColumnByField(tableName, field.key)?.let {
                 val v = field.value.getter.invoke(value)
                 val attValue = it.toDbValue(v)

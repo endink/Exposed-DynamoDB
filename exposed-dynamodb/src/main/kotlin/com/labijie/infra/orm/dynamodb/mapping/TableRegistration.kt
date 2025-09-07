@@ -26,11 +26,14 @@ class TableRegistration(val table: DynamoTable<*, *>) {
         }
     }
 
+
     private class Mapping(val fieldToColumn: Map<String, DynamoColumn<*>>, val columnToField: Map<String, Field>)
 
     private val mapping by lazy {
         val fieldToColumn = mutableMapOf<String, DynamoColumn<*>>()
         val columnToField = mutableMapOf<String, Field>()
+
+        val columns = table.columnNames
 
         getAllFields(table::class.java)
             .filter { DynamoColumn::class.java.isAssignableFrom(it.type) }
@@ -38,7 +41,7 @@ class TableRegistration(val table: DynamoTable<*, *>) {
                 property->
                 property.isAccessible = true
                 val col = property.get(table) as DynamoColumn<*>
-                if(table.columns.contains(col)) {
+                if(columns.values.contains(col)) {
                     fieldToColumn.putIfAbsent(property.name, col)
                     columnToField.putIfAbsent(col.name, property)
                 }
@@ -56,7 +59,8 @@ class TableRegistration(val table: DynamoTable<*, *>) {
     }
 
     fun findColumnByName(columnName: String): DynamoColumn<*>? {
-        return table.columnNames[columnName]
+        val columns = table.columnNames
+        return columns[columnName]
     }
 
     override fun equals(other: Any?): Boolean {

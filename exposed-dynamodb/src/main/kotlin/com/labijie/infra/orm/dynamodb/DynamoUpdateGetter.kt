@@ -22,7 +22,7 @@ class DynamoUpdateGetter<PK, SK>(private val builder: DynamoUpdateBuilder<PK, SK
         builder.addExpression(SetExpr(column.colExpr(), value))
     }
 
-    infix operator fun <T> get(column: DynamoSetColumn<T>) : SetColumnGetExpr<T> {
+    infix operator fun <T> get(column: DynamoSetColumn<DynamoSet<T>, T>) : SetColumnGetExpr<T> {
         return SetColumnGetExpr(column)
     }
 

@@ -2,7 +2,7 @@
  * This file is part of Exposed-DynamoDB project .
  * Copyright (c) 2025
  * @author Anders Xiao
- * 
+ *
  * File Create: 2025-09-03
  */
 
@@ -26,24 +26,47 @@ interface IColumnBounded<TColumn : IColumnBounded<TColumn, TValue>, TValue> : IC
 
 
 // ----------------- Column -----------------
-open class DynamoColumn<TValue>(
+abstract class DynamoColumn<TValue>(
     internal val name: String,
-    internal val tableName: String,
+    internal val table: DynamoTable<*, *>,
     private val dbType: String
-): IDynamoProjection {
-    var defaultValue: TValue? = null
+) : IDynamoProjection {
+    internal var defaultValue: TValue? = null
+
+    internal var nullable: Boolean = false
+
+    internal var mapper: DynamoValueConverter<TValue>? = null
+
+
+    internal val tableName: String = table.tableName
 
     init {
         DynamodbUtils.checkDynamoName(name)
         DynamodbUtils.checkDynamoName(tableName, 3)
     }
 
-    open fun valueFromDb(dbValue: AttributeValue): TValue {
+    protected fun setMapper(mapper: DynamoValueConverter<TValue>) {
+        this.mapper = mapper
+    }
+
+    fun valueFromDb(dbValue: AttributeValue): TValue {
+        val m = mapper
+        if (m != null) {
+            return m.valueFromDb(dbValue)
+        }
+
         @Suppress("UNCHECKED_CAST")
         return AttributeValueConverter.fromDb(dbValue, this) as TValue
     }
 
-    open fun notNullValueToDB(value: TValue): AttributeValue {
+    fun notNullValueToDB(value: TValue): AttributeValue {
+        val nonNull: TValue = requireNotNull(value) { "value cannot be null" }
+
+        val m = mapper
+        if (m != null) {
+            return m.notNullValueToDB(value as Any)
+        }
+
         return AttributeValueConverter.toDb(value, this)
     }
 
@@ -53,10 +76,14 @@ open class DynamoColumn<TValue>(
 
 }
 
+class BooleanColumn<TValue>(
+    name: String,
+    table: DynamoTable<*, *>
+) : DynamoColumn<Boolean>(name, table, DynamoDataType.BOOLEAN), IColumnGetter<BooleanColumn<TValue>, TValue>
 
 
-open class NumericColumn<TValue : Number>(name: String, tableName: String, val type: NumericType) :
-    DynamoColumn<TValue>(name, tableName, DynamoDataType.NUMBER),
+open class NumericColumn<TValue>(name: String, table: DynamoTable<*, *>, internal val type: NumericType) :
+    DynamoColumn<TValue>(name, table, DynamoDataType.NUMBER),
     IColumnBounded<NumericColumn<TValue>, TValue>,
     IColumnIndexable<NumericColumn<TValue>, TValue> {
 
@@ -70,36 +97,38 @@ open class NumericColumn<TValue : Number>(name: String, tableName: String, val t
 }
 
 
+open class StringColumn<T>(name: String, table: DynamoTable<*, *>) :
+    DynamoColumn<T>(name, table, DynamoDataType.STRING),
+    IColumnBounded<StringColumn<T>, T>,
+    IColumnIndexable<StringColumn<T>, T>
 
-open class StringColumn(name: String, tableName: String) :
-    DynamoColumn<String>(name, tableName, DynamoDataType.STRING),
-    IColumnBounded<StringColumn, String>,
-    IColumnIndexable<StringColumn, String>
 
-
-open class BinaryColumn(name: String, tableName: String) :
-    DynamoColumn<ByteArray>(name, tableName, DynamoDataType.BINARY),
-    IColumnBounded<BinaryColumn, ByteArray>,
-    IColumnIndexable<BinaryColumn, ByteArray>
-
+open class BinaryColumn<T>(name: String, table: DynamoTable<*, *>) :
+    DynamoColumn<T>(name, table, DynamoDataType.BINARY),
+    IColumnBounded<BinaryColumn<T>, T>,
+    IColumnIndexable<BinaryColumn<T>, T>
 
 
 // ----------------- 枚举列 -----------------
-open class EnumColumn<T : Enum<T>>(name: String, internal val enumClass: Class<T>, tableName: String) :
-    DynamoColumn<T>(name, tableName, DynamoDataType.NUMBER),
+open class EnumColumn<T>(name: String,  table: DynamoTable<*, *>, internal val enumClass: Class<*>) :
+    DynamoColumn<T>(name, table, DynamoDataType.NUMBER),
     IColumnBounded<EnumColumn<T>, T> {
+
     override val isEnum: Boolean
         get() = true
 }
 
 
+class DynamoSetColumn<TSet, TElement>(name: String, table: DynamoTable<*, *>, internal val dbType: String) :
+    DynamoColumn<TSet>(name, table, dbType),
+    IColumnGetter<DynamoSetColumn<TSet, TElement>, DynamoSet<TElement>>
 
 
-class DynamoSetColumn<TElement>(name: String, tableName: String, dbType: String) :
-    DynamoColumn<DynamoSet<TElement>>(name, tableName, dbType)
+class MapColumn<TMap>(name: String, table: DynamoTable<*, *>) :
+    DynamoColumn<TMap>(name, table, DynamoDataType.MAP),
+    IColumnGetter<MapColumn<TMap>, TMap>
 
 
-class MapColumn(name: String, tableName: String) : DynamoColumn<Map<String, Any?>>(name, tableName, DynamoDataType.MAP)
-
-
-class ListColumn(name: String, tableName: String) : DynamoColumn<List<Any>>(name, tableName, DynamoDataType.LIST)
+class ListColumn<TList>(name: String, table: DynamoTable<*, *>) :
+    DynamoColumn<TList>(name, table, DynamoDataType.LIST),
+    IColumnGetter<ListColumn<TList>, TList>

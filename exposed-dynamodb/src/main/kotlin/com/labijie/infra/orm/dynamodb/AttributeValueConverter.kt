@@ -19,6 +19,7 @@ import java.math.RoundingMode
 
 object AttributeValueConverter {
 
+
     internal fun Number.toDynamoNumber(): String {
 
         // DynamoDB numeric limits
@@ -134,6 +135,7 @@ object AttributeValueConverter {
 
     fun fromDb(attr: AttributeValue, hint: DynamoColumn<*>): Any? {
         if (attr.nul() == true) return null
+
 
         if (hint is EnumColumn) {
             return enumFromDb(attr, hint)

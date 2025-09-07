@@ -31,7 +31,7 @@ interface IDynamoExactKeyQueryBuilder<PK, SK> {
                         val col = (expr.left as? ColumnExpr<*>)?.column
                         val valueExpr = expr.right as? ValueExpr<*>
                         if (col != null && valueExpr != null) {
-                            attributes.putIfAbsent(col.name, valueExpr.hint?.toDbValue(valueExpr.value) ?: AttributeValueConverter.toDb(valueExpr.value))
+                            attributes.putIfAbsent(col.name, col.toDbValue(valueExpr.value))
                         }
                     }
                     if(expr.op == BinaryOp.And) {

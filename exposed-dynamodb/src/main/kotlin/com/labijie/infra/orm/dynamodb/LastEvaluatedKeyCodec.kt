@@ -1,12 +1,4 @@
-/**
- * This file is part of Exposed-DynamoDB project.
- * Copyright (c) 2025
- * @author Anders Xiao
- *
- * File Create: 2025/9/5
- */
-
-package com.labijie.infra.orm.dynamodb.execution
+package com.labijie.infra.orm.dynamodb
 
 import com.labijie.infra.orm.dynamodb.exception.DynamoException
 import com.labijie.infra.orm.dynamodb.exception.InvalidDynamoForwardTokenException
@@ -15,8 +7,14 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.util.Base64
-import kotlin.collections.joinToString
 
+/**
+ * This file is part of Exposed-DynamoDB project.
+ * Copyright (c) 2025
+ * @author Anders Xiao
+ *
+ * File Create: 2025/9/5
+ */
 object LastEvaluatedKeyCodec {
 
     private fun AttributeValue.asString(): String {

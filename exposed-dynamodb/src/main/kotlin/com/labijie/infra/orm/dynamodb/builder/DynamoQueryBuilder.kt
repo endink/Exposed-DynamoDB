@@ -3,7 +3,7 @@ package com.labijie.infra.orm.dynamodb.builder
 import com.labijie.infra.orm.dynamodb.*
 import com.labijie.infra.orm.dynamodb.DynamodbUtils.prettyString
 import com.labijie.infra.orm.dynamodb.exception.DynamoException
-import com.labijie.infra.orm.dynamodb.execution.LastEvaluatedKeyCodec
+import com.labijie.infra.orm.dynamodb.LastEvaluatedKeyCodec
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue
 import software.amazon.awssdk.services.dynamodb.model.QueryRequest

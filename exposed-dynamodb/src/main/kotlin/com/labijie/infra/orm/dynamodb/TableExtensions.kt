@@ -27,6 +27,7 @@ fun <T : DynamoTable<PK, SK>, PK, SK> T.get(projectType: DynamoProjectionType = 
         DynamoProjectionType.ALL -> projection.projectAll()
         DynamoProjectionType.TableOnly -> projection.project(this)
         DynamoProjectionType.KeyOnly -> projection.projectKeyOnly()
+        DynamoProjectionType.TableWithoutKeys -> projection.projectTableWithoutKeys()
     }
     return builder
 }
@@ -45,6 +46,7 @@ fun <T : DynamoTable<PK, SK>, PK, SK> T.query(projectType: DynamoProjectionType 
         DynamoProjectionType.ALL -> projection.projectAll()
         DynamoProjectionType.TableOnly -> projection.project(this)
         DynamoProjectionType.KeyOnly -> projection.projectKeyOnly()
+        DynamoProjectionType.TableWithoutKeys -> projection.projectTableWithoutKeys()
     }
     return builder
 }

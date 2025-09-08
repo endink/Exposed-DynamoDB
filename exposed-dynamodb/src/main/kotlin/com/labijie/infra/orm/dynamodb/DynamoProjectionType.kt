@@ -14,4 +14,5 @@ enum class DynamoProjectionType {
     ALL,
     TableOnly,
     KeyOnly,
+    TableWithoutKeys
 }

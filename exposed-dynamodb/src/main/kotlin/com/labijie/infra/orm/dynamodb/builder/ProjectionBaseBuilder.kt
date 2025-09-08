@@ -2,7 +2,7 @@
  * This file is part of Exposed-DynamoDB project .
  * Copyright (c) 2025
  * @author Anders Xiao
- * 
+ *
  * File Create: 2025-09-03
  */
 
@@ -24,6 +24,13 @@ abstract class ProjectionBaseBuilder(protected val table: DynamoTable<*, *>) {
         selective.add(this)
     }
 
+    fun <PK, SK> DynamoTable<PK, SK>.exclude(vararg columns: DynamoColumn<*>): IDynamoProjection {
+        return DynamoColumnsBuilder(table, columns.asIterable())
+    }
+
+    fun <PK, SK> DynamoTable<PK, SK>.exclude(columns: Collection<DynamoColumn<*>>): IDynamoProjection {
+        return DynamoColumnsBuilder(table, columns)
+    }
 
     protected fun renderProjection(ctx: RenderContext): String? {
         val list = LinkedHashSet<String>(selective.size)
@@ -35,16 +42,35 @@ abstract class ProjectionBaseBuilder(protected val table: DynamoTable<*, *>) {
                         list.add(ctx.placeName(column))
                     }
                 }
+
                 is DynamoExpression<*> -> list.add(p.render(ctx))
-                else-> throw DynamodbTypeMismatchException("Unsupported projection type: '${this::class.simpleName}'$")
+                is DynamoColumnsBuilder<*, *> ->  {
+                    p.build().forEach {
+                        list.add(ctx.placeName(it))
+                    }
+                }
+                else -> throw DynamodbTypeMismatchException("Unsupported projection type: '${this::class.simpleName}'$")
             }
         }
-        return if(list.isEmpty()) null else list.joinToString(",")
+        return if (list.isEmpty()) null else list.joinToString(",")
     }
 
     inner class ProjectionBuilder internal constructor() : IDynamoProjectionBuilder {
         fun projectAll(): ProjectionBuilder {
             selective.clear()
+            return this
+        }
+
+        fun projectTableWithoutKeys(): ProjectionBuilder {
+            selective.clear()
+            selective.add(
+                table.exclude(
+                    listOfNotNull(
+                        table.primaryKey.partitionKey.getColumn(),
+                        table.primaryKey.sortKey?.getColumn()
+                    )
+                )
+            )
             return this
         }
 

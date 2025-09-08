@@ -45,14 +45,20 @@ class DynamoTableForwardListResponse<TResponse>(
 }
 
 
+fun <T: DynamoTableForwardListResponse<TResponse>, TResponse> T.filter(predicate: (Map<String, AttributeValue>) -> Boolean): DynamoTableForwardListResponse<TResponse> {
+    val filtered = this.items.filter(predicate)
+    return DynamoTableForwardListResponse(this.tableName, filtered.isNotEmpty(), filtered, this.response, this.latestKey)
+}
+
 fun <T: DynamoTableListResponse<TResponse>, TResponse> T.filter(predicate: (Map<String, AttributeValue>) -> Boolean): DynamoTableListResponse<TResponse> {
     val filtered = this.items.filter(predicate)
     return DynamoTableListResponse(this.tableName, filtered.isNotEmpty(), filtered, this.response)
 }
 
-fun <T: DynamoTableListResponse<TResponse>, TResponse> T.find(predicate: (Map<String, AttributeValue>) -> Boolean): DynamoTableItemResponse<TResponse> {
-    val filtered = this.items.find(predicate) ?: mapOf()
-    return DynamoTableItemResponse(this.tableName, filtered.isNotEmpty(), filtered, this.response)
+fun <T: DynamoTableListResponse<TResponse>, TResponse> T.find(predicate: (Map<String, AttributeValue>) -> Boolean): DynamoTableItemResponse<TResponse>? {
+    return this.items.find(predicate)?.let {
+        DynamoTableItemResponse(this.tableName, it.isNotEmpty(), it, this.response)
+    }
 }
 
 fun <T: DynamoTableListResponse<TResponse>, TResponse> T.firstOrEmpty(predicate: (Map<String, AttributeValue>) -> Boolean): DynamoTableItemResponse<TResponse> {

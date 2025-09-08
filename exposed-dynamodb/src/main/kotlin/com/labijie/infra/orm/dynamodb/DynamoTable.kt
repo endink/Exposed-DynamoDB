@@ -12,27 +12,45 @@ package com.labijie.infra.orm.dynamodb
 import com.labijie.infra.orm.dynamodb.exception.DuplicateDynamoIndexException
 import com.labijie.infra.orm.dynamodb.mapping.TableRegistry
 import software.amazon.awssdk.services.dynamodb.model.ProjectionType
-import java.util.UUID
 
 @Suppress("SameParameterValue")
-abstract class DynamoTable<TPartitionKey, TSortKey>(val tableName: String) : IDynamoProjection {
+abstract class DynamoTable<TPartitionKey, TSortKey> : IDynamoProjection {
 
-    open class DynamoKeys<TPartitionKey, TSortKey>(val partitionKey: IColumnIndexable<*, TPartitionKey>, val sortKey: IColumnIndexable<*, TSortKey>? = null)
+    constructor(tableName: String) {
+        this.tableNameProvider = ITableNameProvider { tableName }
+    }
+
+    constructor(tableNameProvider: ITableNameProvider) {
+        this.tableNameProvider = tableNameProvider
+    }
+
+    open class DynamoKeys<TPartitionKey, TSortKey>(
+        val partitionKey: IColumnIndexable<*, TPartitionKey>,
+        val sortKey: IColumnIndexable<*, TSortKey>? = null
+    )
 
     private val tableIndexes = mutableMapOf<String, DynamoIndex>()
 
+    private val tableNameProvider: ITableNameProvider
 
     init {
         TableRegistry.registryTable(this)
     }
 
+    val tableName: String by lazy {
+        val tableName = tableNameProvider.getTableName()
+        DynamodbUtils.checkDynamoName(tableName, 3)
+        tableName
+    }
 
     val primaryKey by lazy {
         keys
     }
 
     val indexes: Map<String, DynamoIndex>
-        get() { return tableIndexes }
+        get() {
+            return tableIndexes
+        }
 
     protected abstract val keys: DynamoKeys<out TPartitionKey, out TSortKey>
 

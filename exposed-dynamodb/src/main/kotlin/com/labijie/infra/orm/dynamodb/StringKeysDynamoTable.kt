@@ -9,7 +9,11 @@
 
 package com.labijie.infra.orm.dynamodb
 
-abstract class StringKeysDynamoTable(tableName: String) : DynamoTable<String, String>(tableName), IDynamoProjection {
+abstract class StringKeysDynamoTable : DynamoTable<String, String>, IDynamoProjection {
+
+    constructor(tableName: String) : super(tableName)
+
+    constructor(tableNameProvider: ITableNameProvider) : super(tableNameProvider)
 
     override val keys: DynamoKeys<String, String>
         get() = DynamoKeys(partitionKey(), sortKey())

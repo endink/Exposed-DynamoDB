@@ -100,6 +100,10 @@ value class DynamoDbExecution internal constructor(val client: DynamoDbClient) {
         return mapper(this.item)
     }
 
+    inline fun <reified T : Any> DynamoTableItemResponse<*>.readValueOrNull(mapper: (Map<String, AttributeValue>) -> T): T? {
+        return if(this.item.isEmpty()) null else mapper(this.item)
+    }
+
     inline fun <reified T : Any> DynamoTableListResponse<*>.readValue(mapper: (Map<String, AttributeValue>) -> T): List<T> {
         return this.items.map {
             mapper(it)
@@ -134,6 +138,13 @@ value class DynamoDbExecution internal constructor(val client: DynamoDbClient) {
         return this.items[tableName]?.map {
             create(itemClass, tableName, it)
         } ?: emptyList()
+    }
+
+    fun <T : Any> DynamoTableItemResponse<*>.readValueOrNull(itemClass: Class<T>): T? {
+        if(this.item.isEmpty()) {
+            return null
+        }
+        return create(itemClass, this.tableName, this.item)
     }
 
     fun <T : Any> DynamoTableItemResponse<*>.readValue(itemClass: Class<T>): T {

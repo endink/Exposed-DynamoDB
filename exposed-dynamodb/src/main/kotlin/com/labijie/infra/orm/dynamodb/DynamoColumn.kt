@@ -27,7 +27,7 @@ interface IColumnBounded<TColumn : IColumnBounded<TColumn, TValue>, TValue> : IC
 
 // ----------------- Column -----------------
 abstract class DynamoColumn<TValue>(
-    internal val name: String,
+    val name: String,
     internal val table: DynamoTable<*, *>,
     private val dbType: String
 ) : IDynamoProjection {
@@ -38,11 +38,12 @@ abstract class DynamoColumn<TValue>(
     internal var mapper: DynamoValueConverter<TValue>? = null
 
 
-    internal val tableName: String = table.tableName
+    internal val tableName: String by lazy {
+        table.tableName
+    }
 
     init {
         DynamodbUtils.checkDynamoName(name)
-        DynamodbUtils.checkDynamoName(tableName, 3)
     }
 
     protected fun setMapper(mapper: DynamoValueConverter<TValue>) {

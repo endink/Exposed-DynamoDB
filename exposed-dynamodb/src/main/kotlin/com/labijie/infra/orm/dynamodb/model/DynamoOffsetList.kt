@@ -8,15 +8,14 @@
 
 package com.labijie.infra.orm.dynamodb.model
 
-class DynamoOffsetList<T>(val list: List<T> = emptyList(), val forwardToken: String? = null) {
-    companion object {
+internal object EmptyDynamoOffsetList : DynamoOffsetList<Nothing>()
 
-        private val EMPTY = DynamoOffsetList<Any>(emptyList(), null)
+open class DynamoOffsetList<out T>(val list: List<T> = emptyList(), val forwardToken: String? = null)
 
-        fun <T> empty(): DynamoOffsetList<T> {
+fun <T> emptyDynamoOffsetList(): DynamoOffsetList<T> {
+    return EmptyDynamoOffsetList
+}
 
-            @Suppress("UNCHECKED_CAST")
-            return EMPTY as DynamoOffsetList<T>
-        }
-    }
+fun <T, R> DynamoOffsetList<T>.map(transform: (T) -> R): DynamoOffsetList<R> {
+    return DynamoOffsetList(this.list.map(transform), this.forwardToken)
 }

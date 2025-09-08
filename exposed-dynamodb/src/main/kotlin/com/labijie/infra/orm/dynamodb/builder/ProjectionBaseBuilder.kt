@@ -33,20 +33,29 @@ abstract class ProjectionBaseBuilder(protected val table: DynamoTable<*, *>) {
     }
 
     protected fun renderProjection(ctx: RenderContext): String? {
+        val set = mutableSetOf<String>()
         val list = LinkedHashSet<String>(selective.size)
         for (p in selective) {
             when (p) {
-                is DynamoColumn<*> -> list.add(ctx.placeName(p))
+                is DynamoColumn<*> ->{
+                    if(set.add(p.name)) {
+                        list.add(ctx.placeName(p))
+                    }
+                }
                 is DynamoTable<*, *> -> {
                     p.columns.forEach { column ->
-                        list.add(ctx.placeName(column))
+                        if(set.add(column.name)) {
+                            list.add(ctx.placeName(column))
+                        }
                     }
                 }
 
                 is DynamoExpression<*> -> list.add(p.render(ctx))
                 is DynamoColumnsBuilder<*, *> ->  {
                     p.build().forEach {
-                        list.add(ctx.placeName(it))
+                        if(set.add(it.name)) {
+                            list.add(ctx.placeName(it))
+                        }
                     }
                 }
                 else -> throw DynamodbTypeMismatchException("Unsupported projection type: '${this::class.simpleName}'$")

@@ -50,7 +50,7 @@ class DynamoPutBuilder<PK, SK>(internal val table: DynamoTable<PK, SK>) {
         return result
     }
 
-    internal fun build(): Put {
+    fun build(): Put {
         val item = buildSetter()
 
         val ctx = RenderContext(true)

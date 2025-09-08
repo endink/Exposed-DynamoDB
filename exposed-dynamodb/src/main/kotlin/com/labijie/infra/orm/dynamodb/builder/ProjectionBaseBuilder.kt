@@ -24,19 +24,6 @@ abstract class ProjectionBaseBuilder(protected val table: DynamoTable<*, *>) {
         selective.add(this)
     }
 
-    fun <PK, SK> DynamoTable<PK, SK>.exclude(vararg columns: DynamoColumn<*>): IDynamoProjection {
-        return DynamoColumnsBuilder(table, columns.asIterable())
-    }
-
-    fun <PK, SK> DynamoTable<PK, SK>.exclude(columns: Collection<DynamoColumn<*>>): IDynamoProjection {
-        return DynamoColumnsBuilder(table, columns)
-    }
-
-    fun <PK, SK> DynamoTable<PK, SK>.excludeKeys(): IDynamoProjection {
-        val exclude = listOfNotNull(this.primaryKey.partitionKey.getColumn(), this.primaryKey.sortKey?.getColumn())
-        return DynamoColumnsBuilder(table, exclude)
-    }
-
     protected fun renderProjection(ctx: RenderContext): String? {
         val set = mutableSetOf<String>()
         val list = LinkedHashSet<String>(selective.size)
@@ -70,6 +57,20 @@ abstract class ProjectionBaseBuilder(protected val table: DynamoTable<*, *>) {
     }
 
     inner class ProjectionBuilder internal constructor() : IDynamoProjectionBuilder {
+
+        fun <PK, SK> DynamoTable<PK, SK>.exclude(vararg columns: DynamoColumn<*>): IDynamoProjection {
+            return DynamoColumnsBuilder(table, columns.asIterable())
+        }
+
+        fun <PK, SK> DynamoTable<PK, SK>.exclude(columns: Collection<DynamoColumn<*>>): IDynamoProjection {
+            return DynamoColumnsBuilder(table, columns)
+        }
+
+        fun <PK, SK> DynamoTable<PK, SK>.excludeKeys(): IDynamoProjection {
+            val exclude = listOfNotNull(this.primaryKey.partitionKey.getColumn(), this.primaryKey.sortKey?.getColumn())
+            return DynamoColumnsBuilder(table, exclude)
+        }
+
         fun projectAll(): ProjectionBuilder {
             selective.clear()
             return this
@@ -77,14 +78,7 @@ abstract class ProjectionBaseBuilder(protected val table: DynamoTable<*, *>) {
 
         fun projectTableWithoutKeys(): ProjectionBuilder {
             selective.clear()
-            selective.add(
-                table.exclude(
-                    listOfNotNull(
-                        table.primaryKey.partitionKey.getColumn(),
-                        table.primaryKey.sortKey?.getColumn()
-                    )
-                )
-            )
+            selective.add(table.excludeKeys())
             return this
         }
 

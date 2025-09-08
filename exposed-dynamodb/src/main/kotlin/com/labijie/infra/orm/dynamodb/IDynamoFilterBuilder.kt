@@ -88,6 +88,18 @@ interface IDynamoFilterBuilder<PK, SK> : IDynamoRangeKeyQueryBuilder<PK, SK> {
     infix fun <T: Number> FunctionExpr<T>.neq(value: T) = BinaryExpr(this, value.valueExpr(), BinaryOp.Neq)
 
     //逻辑表达式帮助器
+
+    infix fun DynamoExpression<Boolean>.orNotNull(other: DynamoExpression<Boolean>?) : DynamoExpression<Boolean> {
+        return other?.let { this.or(other) }  ?: this
+    }
+
+    fun DynamoExpression<Boolean>.orIf(predicate: Boolean, condition: ()-> DynamoExpression<Boolean>): DynamoExpression<Boolean> {
+        return if(predicate) {
+            val right =condition.invoke()
+            BinaryExpr(this, right, BinaryOp.Or)
+        } else this
+    }
+
     fun <TValue> DynamoExpression<Boolean>.orIfNotNull(value: TValue?, condition: (value: TValue)-> DynamoExpression<Boolean>): DynamoExpression<Boolean> {
         return value?.let {
             val right =condition.invoke(it)

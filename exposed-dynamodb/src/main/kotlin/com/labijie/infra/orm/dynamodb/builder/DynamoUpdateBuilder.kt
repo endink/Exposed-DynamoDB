@@ -3,6 +3,7 @@ package com.labijie.infra.orm.dynamodb.builder
 import com.labijie.infra.orm.dynamodb.*
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.services.dynamodb.model.ReturnValue
+import software.amazon.awssdk.services.dynamodb.model.Update
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest
 
 /**
@@ -31,8 +32,7 @@ class DynamoUpdateBuilder<PK, SK>(internal val table: DynamoTable<PK, SK>) {
         DynamoConditionBuilder(table)
     }
 
-    fun request(returnValue: ReturnValue = ReturnValue.NONE, customizer: UpdateRequestCustomizer? = null): UpdateItemRequest {
-
+    fun build(): Update {
         val result = condition.buildCondition()
 
         val ctx = RenderContext(true)
@@ -40,21 +40,21 @@ class DynamoUpdateBuilder<PK, SK>(internal val table: DynamoTable<PK, SK>) {
         val conditionExpression = result.conditionExpression?.render(ctx)
 
         // Build the UpdateItemRequest
-        val update = UpdateItemRequest.builder()
+        val update = Update.builder()
             .tableName(tableName)
             .key(result.keys)
             .updateExpression(updateExpression)
             .ifNullOrBlankInput(conditionExpression) { conditionExpression(it) }
             .ifNotNullOrEmpty(ctx.values) { expressionAttributeValues(it) }
             .ifNotNullOrEmpty(ctx.attributeNames) { expressionAttributeNames(it) }
-            .returnValues(returnValue)
-            .ifNotNull(customizer) {
-                it.invoke(this)
-                this
-            }
             .build()
 
         return update
+    }
+
+    fun request(returnValue: ReturnValue = ReturnValue.NONE, customizer: UpdateRequestCustomizer? = null): UpdateItemRequest {
+        val update = build()
+        return update.request(returnValue, customizer)
     }
 
     inner class DynamoSegmentsBuilder() : IDynamodbUpdateBuilder {

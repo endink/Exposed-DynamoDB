@@ -49,6 +49,17 @@ interface IDynamoExactKeyQueryBuilder<PK, SK> {
     // ----------------- Boolean Logic -----------------
     infix fun DynamoExpression<Boolean>.and(other: DynamoExpression<Boolean>) = BinaryExpr(this, other, BinaryOp.And)
 
+    infix fun DynamoExpression<Boolean>.andNotNull(other: DynamoExpression<Boolean>?) : DynamoExpression<Boolean> {
+        return other?.let { this.and(other) }  ?: this
+    }
+
+
+    fun DynamoExpression<Boolean>.andIf(predicate: Boolean, condition: ()-> DynamoExpression<Boolean>): DynamoExpression<Boolean> {
+        return if(predicate) {
+            val right =condition.invoke()
+            BinaryExpr(this, right, BinaryOp.And)
+        } else this
+    }
 
     fun <TValue> DynamoExpression<Boolean>.andIfNotNull(value: TValue?, condition: (value: TValue)-> DynamoExpression<Boolean>): DynamoExpression<Boolean> {
         return value?.let {

@@ -38,3 +38,5 @@ fun DeleteItemResponse.forTable(tableName: String): DynamoTableItemResponse<Dele
 fun UpdateItemResponse.forTable(tableName: String): DynamoTableItemResponse<UpdateItemResponse> {
     return DynamoTableItemResponse(tableName, this.hasAttributes(), this.attributes(), this)
 }
+
+

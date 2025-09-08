@@ -32,6 +32,11 @@ abstract class ProjectionBaseBuilder(protected val table: DynamoTable<*, *>) {
         return DynamoColumnsBuilder(table, columns)
     }
 
+    fun <PK, SK> DynamoTable<PK, SK>.excludeKeys(): IDynamoProjection {
+        val exclude = listOfNotNull(this.primaryKey.partitionKey.getColumn(), this.primaryKey.sortKey?.getColumn())
+        return DynamoColumnsBuilder(table, exclude)
+    }
+
     protected fun renderProjection(ctx: RenderContext): String? {
         val set = mutableSetOf<String>()
         val list = LinkedHashSet<String>(selective.size)

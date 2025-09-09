@@ -18,10 +18,12 @@ abstract class DynamoTable<TPartitionKey, TSortKey> : IDynamoProjection {
 
     constructor(tableName: String) {
         this.tableNameProvider = ITableNameProvider { tableName }
+        TableRegistry.registryTable(this)
     }
 
     constructor(tableNameProvider: ITableNameProvider) {
         this.tableNameProvider = tableNameProvider
+        TableRegistry.registryTable(this)
     }
 
     open class DynamoKeys<TPartitionKey, TSortKey>(
@@ -33,9 +35,6 @@ abstract class DynamoTable<TPartitionKey, TSortKey> : IDynamoProjection {
 
     private val tableNameProvider: ITableNameProvider
 
-    init {
-        TableRegistry.registryTable(this)
-    }
 
     val tableName: String by lazy {
         val tableName = tableNameProvider.getTableName()

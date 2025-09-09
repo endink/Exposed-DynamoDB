@@ -8,12 +8,22 @@
 
 package com.labijie.infra.orm.dynamodb.model
 
-internal object EmptyDynamoOffsetList : DynamoOffsetList<Nothing>()
+class DynamoOffsetList<out T> {
+    var list: List<@UnsafeVariance T> = emptyList()
+    var forwardToken: String? = null
 
-open class DynamoOffsetList<out T>(val list: List<T> = emptyList(), val forwardToken: String? = null)
+    constructor(list: List<T>, forwardToken: String? = null) {
+        this.list = list
+        this.forwardToken = forwardToken
+    }
+
+    constructor()
+}
+
+private val EMPTY_LIST = DynamoOffsetList<Nothing>()
 
 fun <T> emptyDynamoOffsetList(): DynamoOffsetList<T> {
-    return EmptyDynamoOffsetList
+    return EMPTY_LIST
 }
 
 fun <T, R> DynamoOffsetList<T>.map(transform: (T) -> R): DynamoOffsetList<R> {

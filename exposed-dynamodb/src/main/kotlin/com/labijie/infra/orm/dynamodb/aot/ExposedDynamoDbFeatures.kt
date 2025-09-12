@@ -16,6 +16,7 @@ import io.github.classgraph.ClassGraph
 import io.github.classgraph.ClassInfo
 import org.graalvm.nativeimage.hosted.Feature
 import org.graalvm.nativeimage.hosted.RuntimeReflection
+import org.slf4j.LoggerFactory
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue
 import java.util.function.Consumer
 import kotlin.math.max
@@ -23,6 +24,8 @@ import kotlin.math.max
 
 @Suppress("unused")
 class ExposedDynamoDbFeatures : Feature {
+
+    private val logger = LoggerFactory.getLogger(ExposedDynamoDbFeatures::class.java)
 
     override fun beforeAnalysis(access: Feature.BeforeAnalysisAccess) {
         registerEnum(AttributeValue.Type::class.java)
@@ -43,7 +46,7 @@ class ExposedDynamoDbFeatures : Feature {
                         access.findClass(classInfo.name)?.let {
                             tableClass->
                             if(registerObject(tableClass)) {
-                                println("AOT dynamo table found: ${tableClass.name}")
+                                logger.info("AOT dynamo table found: ${tableClass.name}")
                             }
                         }
                     }

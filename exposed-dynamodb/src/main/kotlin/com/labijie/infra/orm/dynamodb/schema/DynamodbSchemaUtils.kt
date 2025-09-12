@@ -40,7 +40,7 @@ object DynamodbSchemaUtils {
     /**
      * Create a DynamoDB table including primary key and Local Secondary Indexes (LSI)
      */
-    fun <PK, SK> createTableIfNotExist(client: DynamoDbClient, table: DynamoTable<PK, SK>): Boolean {
+    fun <PK, SK> createTableIfNotExist(client: DynamoDbClient, table: DynamoTable<PK, SK>, customize: ((CreateTableRequest.Builder)-> Unit)? = null): Boolean {
 
         // 检查表是否已经存在
         val resp = client.listTables()
@@ -118,9 +118,11 @@ object DynamodbSchemaUtils {
             .attributeDefinitions(attributeDefinitions.values)
             .keySchema(keySchema)
             .billingMode(BillingMode.PAY_PER_REQUEST)
-            .let {
-                builder->
-                lsi?.let { idx -> builder.localSecondaryIndexes(idx) } ?: builder
+            .apply {
+                lsi?.let { idx -> this.localSecondaryIndexes(idx) }
+            }
+            .apply {
+                customize?.invoke(this)
             }
             .build()
 

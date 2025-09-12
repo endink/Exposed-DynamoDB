@@ -9,9 +9,7 @@
 
 package com.labijie.infra.orm.dynamodb
 
-import com.labijie.infra.orm.dynamodb.exception.DynamodbTypeMismatchException
-import com.labijie.infra.orm.dynamodb.LastEvaluatedKeyCodec
-import com.labijie.infra.orm.dynamodb.mapping.ReflectionDynamoDbMapper
+import com.labijie.infra.orm.dynamodb.exception.DynamoDbTypeMismatchException
 import software.amazon.awssdk.services.dynamodb.model.*
 
 
@@ -45,25 +43,25 @@ private fun DynamoColumn<*>.checkColumnValue(value: Any) {
     tableInfo.let { }
 
     when (this.dynamoDbType()) {
-        "S" -> if (value !is String) throw DynamodbTypeMismatchException("$tableInfo expects String, got ${value.javaClass.simpleName}")
-        "N" -> if (value !is Number) throw DynamodbTypeMismatchException("$tableInfo expects Number, got ${value.javaClass.simpleName}")
-        "BOOL" -> if (value !is Boolean) throw DynamodbTypeMismatchException("$tableInfo expects Boolean, got ${value.javaClass.simpleName}")
-        "B" -> if (value !is ByteArray) throw DynamodbTypeMismatchException("$tableInfo expects ByteArray, got ${value.javaClass.simpleName}")
-        "SS" -> if (value !is DynamoSet<*> || (value.isNotEmpty() && value.first() !is String)) throw DynamodbTypeMismatchException(
+        "S" -> if (value !is String) throw DynamoDbTypeMismatchException("$tableInfo expects String, got ${value.javaClass.simpleName}")
+        "N" -> if (value !is Number) throw DynamoDbTypeMismatchException("$tableInfo expects Number, got ${value.javaClass.simpleName}")
+        "BOOL" -> if (value !is Boolean) throw DynamoDbTypeMismatchException("$tableInfo expects Boolean, got ${value.javaClass.simpleName}")
+        "B" -> if (value !is ByteArray) throw DynamoDbTypeMismatchException("$tableInfo expects ByteArray, got ${value.javaClass.simpleName}")
+        "SS" -> if (value !is DynamoSet<*> || (value.isNotEmpty() && value.first() !is String)) throw DynamoDbTypeMismatchException(
             "$tableInfo expects DynamoSet<String>"
         )
 
-        "NS" -> if (value !is DynamoSet<*> || (value.isNotEmpty() && value.first() !is Number)) throw DynamodbTypeMismatchException(
+        "NS" -> if (value !is DynamoSet<*> || (value.isNotEmpty() && value.first() !is Number)) throw DynamoDbTypeMismatchException(
             "$tableInfo expects DynamoSet<Number>"
         )
 
-        "BS" -> if (value !is DynamoSet<*> || (value.isNotEmpty() && value.first() !is ByteArray)) throw DynamodbTypeMismatchException(
+        "BS" -> if (value !is DynamoSet<*> || (value.isNotEmpty() && value.first() !is ByteArray)) throw DynamoDbTypeMismatchException(
             "$tableInfo expects DynamoSet<ByteArray>"
         )
 
-        "L" -> if (value !is List<*>) throw DynamodbTypeMismatchException("$tableInfo expects List")
-        "M" -> if (value !is Map<*, *>) throw DynamodbTypeMismatchException("$tableInfo expects Map")
-        else -> throw DynamodbTypeMismatchException("Unsupported column type '${this.dynamoDbType()}' for $tableInfo")
+        "L" -> if (value !is List<*>) throw DynamoDbTypeMismatchException("$tableInfo expects List")
+        "M" -> if (value !is Map<*, *>) throw DynamoDbTypeMismatchException("$tableInfo expects Map")
+        else -> throw DynamoDbTypeMismatchException("Unsupported column type '${this.dynamoDbType()}' for $tableInfo")
     }
 }
 

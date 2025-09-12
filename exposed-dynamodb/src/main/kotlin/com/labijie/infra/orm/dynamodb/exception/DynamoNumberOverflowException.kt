@@ -13,4 +13,4 @@ package com.labijie.infra.orm.dynamodb.exception
 class DynamoNumberOverflowException(
     message: String? = null,
     cause: Throwable? = null
-) : DynamoException(message, cause)
+) : ExposedDynamoDbException(message, cause)

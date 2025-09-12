@@ -10,7 +10,7 @@
 package com.labijie.infra.orm.dynamodb.builder
 
 import com.labijie.infra.orm.dynamodb.*
-import com.labijie.infra.orm.dynamodb.exception.DynamodbTypeMismatchException
+import com.labijie.infra.orm.dynamodb.exception.DynamoDbTypeMismatchException
 
 
 abstract class ProjectionBaseBuilder(protected val table: DynamoTable<*, *>) {
@@ -50,7 +50,7 @@ abstract class ProjectionBaseBuilder(protected val table: DynamoTable<*, *>) {
                         }
                     }
                 }
-                else -> throw DynamodbTypeMismatchException("Unsupported projection type: '${this::class.simpleName}'$")
+                else -> throw DynamoDbTypeMismatchException("Unsupported projection type: '${this::class.simpleName}'$")
             }
         }
         return if (list.isEmpty()) null else list.joinToString(",")

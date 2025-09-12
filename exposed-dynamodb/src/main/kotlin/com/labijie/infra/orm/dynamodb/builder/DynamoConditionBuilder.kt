@@ -11,7 +11,7 @@
 package com.labijie.infra.orm.dynamodb.builder
 
 import com.labijie.infra.orm.dynamodb.*
-import com.labijie.infra.orm.dynamodb.exception.DynamodbExpressionFormatException
+import com.labijie.infra.orm.dynamodb.exception.DynamoDbExpressionFormatException
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue
 
 
@@ -37,7 +37,7 @@ open class DynamoConditionBuilder<PK, SK>(private val table: DynamoTable<PK, SK>
                 val col = sk.getColumn()
                 keys.put(col.name, col.toDbValue(sortKey))
             }else {
-                throw DynamodbExpressionFormatException.sortKeyMissed(table.tableName)
+                throw DynamoDbExpressionFormatException.sortKeyMissed(table.tableName)
             }
         }
         return this

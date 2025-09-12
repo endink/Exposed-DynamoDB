@@ -9,7 +9,7 @@
 
 package com.labijie.infra.orm.dynamodb
 
-import com.labijie.infra.orm.dynamodb.exception.DynamodbExpressionFormatException
+import com.labijie.infra.orm.dynamodb.exception.DynamoDbExpressionFormatException
 
 
 interface IDynamoProjection
@@ -23,7 +23,7 @@ interface IProjectedValueExpression<T> : DynamoExpression<T>, IDynamoProjection 
 class ListItemValueExpr<T>(override val column: DynamoColumn<List<Any>>, val index: Int) : IComputedValueExpr<T>, IProjectedValueExpression<T>, IDynamoProjection {
     init {
         if (index < 0) {
-            throw DynamodbExpressionFormatException("Invalid ListItemValueExpr: 'index' cannot be negative. Got index=$index, column=${column.name}")
+            throw DynamoDbExpressionFormatException("Invalid ListItemValueExpr: 'index' cannot be negative. Got index=$index, column=${column.name}")
         }
     }
 
@@ -35,7 +35,7 @@ class ListItemValueExpr<T>(override val column: DynamoColumn<List<Any>>, val ind
 class MapItemValueExpr<T>(override val column: DynamoColumn<Map<String,*>>, val key: String) : IComputedValueExpr<T>, IProjectedValueExpression<T> {
     init {
         if (key.isBlank()) {
-            throw DynamodbExpressionFormatException("Invalid MapItemValueExpr: key cannot be empty at column='column.name")
+            throw DynamoDbExpressionFormatException("Invalid MapItemValueExpr: key cannot be empty at column='column.name")
         }
     }
 
@@ -52,7 +52,7 @@ class NestedMapItemValueExpr(
 
     init {
         if (key.isBlank()) {
-            throw DynamodbExpressionFormatException("Map column 'key' cannot be negative. Got key=$key, column=${column.name}")
+            throw DynamoDbExpressionFormatException("Map column 'key' cannot be negative. Got key=$key, column=${column.name}")
         }
     }
 
@@ -69,7 +69,7 @@ class NestedListItemValueExpr(
 
     init {
         if (index < 0) {
-            throw DynamodbExpressionFormatException("Invalid ListItemValueExpr: 'index' cannot be negative. Got index=$index, column=${column.name}")
+            throw DynamoDbExpressionFormatException("Invalid ListItemValueExpr: 'index' cannot be negative. Got index=$index, column=${column.name}")
         }
     }
 

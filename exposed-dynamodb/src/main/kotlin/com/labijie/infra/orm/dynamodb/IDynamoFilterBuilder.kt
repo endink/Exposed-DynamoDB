@@ -9,7 +9,7 @@
 
 package com.labijie.infra.orm.dynamodb
 
-import com.labijie.infra.orm.dynamodb.exception.DynamodbExpressionFormatException
+import com.labijie.infra.orm.dynamodb.exception.DynamoDbExpressionFormatException
 
 
 interface IDynamoFilterBuilder<PK, SK> : IDynamoRangeKeyQueryBuilder<PK, SK> {
@@ -52,7 +52,7 @@ interface IDynamoFilterBuilder<PK, SK> : IDynamoRangeKeyQueryBuilder<PK, SK> {
     infix fun <T> DynamoColumn<T>.inList(values: List<T>): DynamoExpression<Boolean> {
 
         if (values.isEmpty()) {
-            throw DynamodbExpressionFormatException(
+            throw DynamoDbExpressionFormatException(
                 "DynamoDB 'inList' operation cannot be applied on column '${this.name}' with an empty list. "
             )
         }

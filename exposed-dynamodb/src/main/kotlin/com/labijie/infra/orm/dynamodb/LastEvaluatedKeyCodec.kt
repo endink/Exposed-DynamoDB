@@ -1,6 +1,6 @@
 package com.labijie.infra.orm.dynamodb
 
-import com.labijie.infra.orm.dynamodb.exception.DynamoException
+import com.labijie.infra.orm.dynamodb.exception.ExposedDynamoDbException
 import com.labijie.infra.orm.dynamodb.exception.InvalidDynamoForwardTokenException
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue
@@ -23,7 +23,7 @@ object LastEvaluatedKeyCodec {
             AttributeValue.Type.N -> this.n()
             AttributeValue.Type.B -> this.b().asString(Charsets.UTF_8)
             AttributeValue.Type.NUL -> "null"
-            else-> throw DynamoException("Unsupported value type for key: ${this.type()}")
+            else-> throw ExposedDynamoDbException("Unsupported value type for key: ${this.type()}")
         }
         return "${this.type()}:${s}"
     }
@@ -39,7 +39,7 @@ object LastEvaluatedKeyCodec {
             AttributeValue.Type.N -> AttributeValue.builder().n(v[1]).build()
             AttributeValue.Type.B -> AttributeValue.builder().b(SdkBytes.fromString(v[1], Charsets.UTF_8)).build()
             AttributeValue.Type.NUL -> AttributeValue.builder().nul(true).build()
-            else-> throw DynamoException("Unsupported value type for key: $type")
+            else-> throw ExposedDynamoDbException("Unsupported value type for key: $type")
         }
         return s
     }

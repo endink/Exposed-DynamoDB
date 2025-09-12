@@ -22,6 +22,10 @@ class ExposedDynamoDbFeatures : Feature {
         registerEnum(AttributeValue.Type::class.java)
         registerObject(ReflectionDynamoDbMapper::class.java)
         RuntimeReflection.register(DynamoUpdateBuilder::class.java)
+
+//        access.applicationClassLoader.definedPackages.forEach {
+//            it.name
+//        }
     }
 
     private fun Feature.BeforeAnalysisAccess.findClass(clazzName: String): Class<*>? {
@@ -39,7 +43,7 @@ class ExposedDynamoDbFeatures : Feature {
             RuntimeReflection.register(instanceField)
             RuntimeReflection.register(clazz)
         } catch (ex: NoSuchFieldException) {
-            // 不是 object 就忽略
+            return
         }
 
         for (constructor in clazz.declaredConstructors) {

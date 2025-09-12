@@ -9,7 +9,7 @@
 
 package com.labijie.infra.orm.dynamodb
 
-import com.labijie.infra.orm.dynamodb.exception.DynamodbExpressionFormatException
+import com.labijie.infra.orm.dynamodb.exception.DynamoDbExpressionFormatException
 
 abstract class DynamoUpdateExpression<TValue>(
     val left: ILeftValueExpression<TValue>
@@ -56,13 +56,13 @@ class SliceExpr(
     override fun render(ctx: RenderContext): String {
 
         if (startInclusive < 0) {
-            throw DynamodbExpressionFormatException(
+            throw DynamoDbExpressionFormatException(
                 "Invalid slice expression: 'startInclusive' cannot be negative. Got startInclusive=$startInclusive"
             )
         }
 
         if (endExclusive != null && endExclusive < 0) {
-            throw DynamodbExpressionFormatException(
+            throw DynamoDbExpressionFormatException(
                 "Invalid slice expression: 'endExclusive' cannot be negative. Got endExclusive=$endExclusive"
             )
         }
@@ -153,7 +153,7 @@ class ListItemGetExpr(
 
     init {
         if (index < 0) {
-            throw DynamodbExpressionFormatException("List column 'index' cannot be negative. Got index=$index, column=${column.name}")
+            throw DynamoDbExpressionFormatException("List column 'index' cannot be negative. Got index=$index, column=${column.name}")
         }
     }
 
@@ -174,7 +174,7 @@ class MapItemGetExpr(
 
     init {
         if (key.isBlank()) {
-            throw DynamodbExpressionFormatException("Map column 'key' cannot be negative. Got key=$key, column=${column.name}")
+            throw DynamoDbExpressionFormatException("Map column 'key' cannot be negative. Got key=$key, column=${column.name}")
         }
     }
 

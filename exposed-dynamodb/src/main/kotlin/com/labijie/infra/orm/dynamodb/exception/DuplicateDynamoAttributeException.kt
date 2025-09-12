@@ -11,6 +11,6 @@ package com.labijie.infra.orm.dynamodb.exception
 class DuplicateDynamoAttributeException(
     tableName: String,
     columnName: String
-) : DynamoException(
+) : ExposedDynamoDbException(
     "Duplicate attribute name detected in '${tableName}': attribute '$columnName' already exists."
 )

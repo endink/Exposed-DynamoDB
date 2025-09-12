@@ -9,8 +9,8 @@
 package com.labijie.infra.orm.dynamodb.builder
 
 import com.labijie.infra.orm.dynamodb.*
-import com.labijie.infra.orm.dynamodb.exception.DynamoException
-import com.labijie.infra.orm.dynamodb.exception.DynamodbExpressionFormatException
+import com.labijie.infra.orm.dynamodb.exception.ExposedDynamoDbException
+import com.labijie.infra.orm.dynamodb.exception.DynamoDbExpressionFormatException
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue
 import software.amazon.awssdk.services.dynamodb.model.BatchGetItemRequest
 import software.amazon.awssdk.services.dynamodb.model.KeysAndAttributes
@@ -87,7 +87,7 @@ class DynamoBatchGetBuilder<TPartitionKey, TSortKey> internal constructor(privat
             val sk = table.primaryKey.sortKey
             if (sk != null) {
                 if(sortKey.isEmpty()) {
-                    throw DynamodbExpressionFormatException.sortKeyMissed(table.tableName)
+                    throw DynamoDbExpressionFormatException.sortKeyMissed(table.tableName)
                 }
                 sortKey.forEach {
                     val pkAndSk = mutableMapOf(
@@ -111,7 +111,7 @@ class DynamoBatchGetBuilder<TPartitionKey, TSortKey> internal constructor(privat
             val attributes = mutableMapOf<String, AttributeValue>()
             IDynamoExactKeyQueryBuilder.extractKeys(expr, attributes)
 
-            if (attributes.isEmpty()) throw DynamoException("No key clause defined.")
+            if (attributes.isEmpty()) throw ExposedDynamoDbException("No key clause defined.")
             keys.add(attributes)
             return this
         }
@@ -137,7 +137,7 @@ class DynamoBatchGetBuilder<TPartitionKey, TSortKey> internal constructor(privat
         }
 
         internal fun render(context: RenderContext): KeysAndAttributes {
-            if (keys.isEmpty()) throw DynamoException("No key clause defined.")
+            if (keys.isEmpty()) throw ExposedDynamoDbException("No key clause defined.")
 
             val projectionExpression = renderProjection(context)
 

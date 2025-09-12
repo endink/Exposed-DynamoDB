@@ -12,25 +12,25 @@ package com.labijie.infra.orm.dynamodb.exception
 import java.lang.RuntimeException
 
 
-open class DynamoException(
+open class ExposedDynamoDbException(
     message: String? = null,
     cause: Throwable? = null
 ) : RuntimeException(message, cause)
 
 
-open class DynamodbTypeMismatchException(
+open class DynamoDbTypeMismatchException(
     message: String? = null,
     cause: Throwable? = null
-) : DynamoException(message, cause)
+) : ExposedDynamoDbException(message, cause)
 
 
-open class DynamodbExpressionFormatException(
+open class DynamoDbExpressionFormatException(
     message: String? = null,
     cause: Throwable? = null
-) : DynamoException(message, cause) {
+) : ExposedDynamoDbException(message, cause) {
     companion object {
-        fun sortKeyMissed(tableName: String): DynamodbExpressionFormatException {
-            return DynamodbExpressionFormatException( "Query operation must include a sort key condition. " +
+        fun sortKeyMissed(tableName: String): DynamoDbExpressionFormatException {
+            return DynamoDbExpressionFormatException( "Query operation must include a sort key condition. " +
                     "The table '${tableName}' has a composite primary key (pk + sk), " +
                     "so you must specify both partition key and sort key in the query.")
         }

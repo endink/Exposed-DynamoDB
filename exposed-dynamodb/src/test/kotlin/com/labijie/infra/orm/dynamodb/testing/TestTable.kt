@@ -9,7 +9,6 @@
 
 package com.labijie.infra.orm.dynamodb.testing
 
-import com.labijie.infra.orm.dynamodb.DynamoTable
 import com.labijie.infra.orm.dynamodb.IColumnIndexable
 import com.labijie.infra.orm.dynamodb.StringKeysDynamoTable
 import software.amazon.awssdk.services.dynamodb.model.ProjectionType

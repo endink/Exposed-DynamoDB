@@ -80,6 +80,7 @@ value class DynamoDbExecution internal constructor(val client: DynamoDbClient) {
         return client.updateItem(request).forTable(this.tableName)
     }
 
+    /************************************ Reflection Read Value *********************************************/
 
     inline fun <reified T : Any> DynamoTableBatchGetResponse<*>.readValues(mapper: (Map<String, AttributeValue>) -> T): List<T> {
         return this.items[tableName]?.map {

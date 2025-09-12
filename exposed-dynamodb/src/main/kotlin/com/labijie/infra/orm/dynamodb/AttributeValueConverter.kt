@@ -10,7 +10,7 @@
 package com.labijie.infra.orm.dynamodb
 
 import com.labijie.infra.orm.dynamodb.exception.DynamoNumberOverflowException
-import com.labijie.infra.orm.dynamodb.exception.DynamodbTypeMismatchException
+import com.labijie.infra.orm.dynamodb.exception.DynamoDbTypeMismatchException
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue
 import java.math.BigDecimal
@@ -94,22 +94,22 @@ object AttributeValueConverter {
 
     private fun enumFromDb(dbValue: AttributeValue, column: EnumColumn<*>): Any {
         val raw = dbValue.n()
-            ?: throw DynamodbTypeMismatchException(
+            ?: throw DynamoDbTypeMismatchException(
                 "Expected Number for enum column '${column.name}', got $dbValue"
             )
 
         val intValue = raw.toIntOrNull()
-            ?: throw DynamodbTypeMismatchException(
+            ?: throw DynamoDbTypeMismatchException(
                 "Expected a valid integer for enum column '${column.name}', got $raw"
             )
 
         val constants = column.enumClass.enumConstants
-            ?: throw DynamodbTypeMismatchException(
+            ?: throw DynamoDbTypeMismatchException(
                 "Enum class ${column.enumClass.name} has no constants"
             )
 
         if (intValue !in constants.indices) {
-            throw DynamodbTypeMismatchException(
+            throw DynamoDbTypeMismatchException(
                 "Enum index $intValue out of range for enum '${column.enumClass.simpleName}' (valid: 0..${constants.lastIndex})"
             )
         }
@@ -120,7 +120,7 @@ object AttributeValueConverter {
     private fun enumToDb(value: Any, enumClass: Class<*>, columnName: String? = null): AttributeValue {
         // 确认 value 是 enumColumn 指定的 enum 类型
         if (!enumClass.isInstance(value)) {
-            throw DynamodbTypeMismatchException(
+            throw DynamoDbTypeMismatchException(
                 if (!columnName.isNullOrBlank()) {
                     "Value '$value' is not of enum type ${enumClass.simpleName} for column '${columnName}'"
                 } else {
@@ -153,7 +153,7 @@ object AttributeValueConverter {
             DynamoDataType.NUMBER -> {
                 attr.n()?.let { n ->
                     if (hint !is NumericColumn) {
-                        throw DynamodbTypeMismatchException("Unsupported NUMBER mapping: expected NumericColumn, but got hint type ${hint::class.simpleName}")
+                        throw DynamoDbTypeMismatchException("Unsupported NUMBER mapping: expected NumericColumn, but got hint type ${hint::class.simpleName}")
                     }
                     // 根据 hint 提示的 Kotlin 类型决定返回什么
                     try {
@@ -165,7 +165,7 @@ object AttributeValueConverter {
                             NumericColumn.NumericType.Short -> n.toShort()
                         }
                     }catch (_: NumberFormatException) {
-                        throw DynamodbTypeMismatchException("Unsupported NUMBER mapping: expected ${hint.type}, but got value '${n}'")
+                        throw DynamoDbTypeMismatchException("Unsupported NUMBER mapping: expected ${hint.type}, but got value '${n}'")
                     }
                 }
             }
@@ -174,7 +174,7 @@ object AttributeValueConverter {
                 try {
                     attr.ns()?.map { n -> n.toDouble() }?.toSet() ?: emptySet<Any>()
                 } catch (e: NumberFormatException) {
-                    throw DynamodbTypeMismatchException(
+                    throw DynamoDbTypeMismatchException(
                         "Expected a set of numbers for column '${hint.name}', but got invalid value: [${
                             attr.ns().joinToString(", ")
                         }]", e
@@ -208,7 +208,7 @@ object AttributeValueConverter {
                 } ?: emptyMap<String, Any?>()
             }
 
-            else -> throw DynamodbTypeMismatchException("Unsupported DynamoDB type: ${hint.dynamoDbType()}")
+            else -> throw DynamoDbTypeMismatchException("Unsupported DynamoDB type: ${hint.dynamoDbType()}")
         }
     }
 
@@ -257,7 +257,7 @@ object AttributeValueConverter {
 
             is Set<*> -> {
                 if(value is DynamoSet<*>) {
-                    if (value.values.isEmpty()) throw DynamodbTypeMismatchException("Empty Set cannot infer type")
+                    if (value.values.isEmpty()) throw DynamoDbTypeMismatchException("Empty Set cannot infer type")
 
                     when (val first = value.values.first()) {
                         is String -> AttributeValue.builder().ss(value.values.filterIsInstance<String>()).build()
@@ -267,16 +267,16 @@ object AttributeValueConverter {
                         is ByteArray -> AttributeValue.builder()
                             .bs(value.values.filterIsInstance<ByteArray>().map { SdkBytes.fromByteArray(it) }).build()
 
-                        else -> throw DynamodbTypeMismatchException("Unsupported Set element type: ${first!!::class.java.simpleName}")
+                        else -> throw DynamoDbTypeMismatchException("Unsupported Set element type: ${first!!::class.java.simpleName}")
                     }
                 }else{
-                    throw DynamodbTypeMismatchException(
+                    throw DynamoDbTypeMismatchException(
                         "Unsupported Set type. Use DynamoSet instead, e.g., setOfString() or setOfNumber() or setOfBinary."
                     )
                 }
             }
 
-            else -> throw DynamodbTypeMismatchException("Unsupported data type: ${value::class.java.simpleName}")
+            else -> throw DynamoDbTypeMismatchException("Unsupported data type: ${value::class.java.simpleName}")
         }
     }
 
@@ -293,13 +293,13 @@ object AttributeValueConverter {
         return when (hint.dynamoDbType()) {
             DynamoDataType.STRING -> {
                 if (value !is String)
-                    throw DynamodbTypeMismatchException("expects String, but got ${value.javaClass.simpleName}")
+                    throw DynamoDbTypeMismatchException("expects String, but got ${value.javaClass.simpleName}")
                 AttributeValue.builder().s(value).build()
             }
 
             DynamoDataType.STRING_SET -> {
                 if (value !is DynamoSet<*> || value.any { it !is String })
-                    throw DynamodbTypeMismatchException("expects DynamoSet<String>, but got ${value.javaClass.simpleName}")
+                    throw DynamoDbTypeMismatchException("expects DynamoSet<String>, but got ${value.javaClass.simpleName}")
                 AttributeValue.builder().ss(value.filterIsInstance<String>()).build()
             }
 
@@ -308,13 +308,13 @@ object AttributeValueConverter {
                     is Float -> AttributeValue.builder().n(value.toDynamoNumber()).build()
                     is Double -> AttributeValue.builder().n(value.toDynamoNumber()).build()
                     is Number -> AttributeValue.builder().n(value.toString()).build()
-                    else -> throw DynamodbTypeMismatchException("expects Number, but got ${value.javaClass.simpleName}")
+                    else -> throw DynamoDbTypeMismatchException("expects Number, but got ${value.javaClass.simpleName}")
                 }
             }
 
             DynamoDataType.NUMBER_SET -> {
                 if (value !is DynamoSet<*> || value.any { it !is Number })
-                    throw DynamodbTypeMismatchException("expects DynamoSet<Number>, but got ${value.javaClass.simpleName}")
+                    throw DynamoDbTypeMismatchException("expects DynamoSet<Number>, but got ${value.javaClass.simpleName}")
                 AttributeValue.builder().ns(value.map { it.toString() }).build()
             }
 
@@ -322,13 +322,13 @@ object AttributeValueConverter {
                 when (value) {
                     is ByteArray -> AttributeValue.builder().b(SdkBytes.fromByteArray(value)).build()
                     is SdkBytes -> AttributeValue.builder().b(value).build()
-                    else -> throw DynamodbTypeMismatchException("expects ByteArray or SdkBytes, but got ${value.javaClass.simpleName}")
+                    else -> throw DynamoDbTypeMismatchException("expects ByteArray or SdkBytes, but got ${value.javaClass.simpleName}")
                 }
             }
 
             DynamoDataType.BINARY_SET -> {
                 if (value !is DynamoSet<*> || value.any { it !is ByteArray && it !is SdkBytes })
-                    throw DynamodbTypeMismatchException("expects DynamoSet<ByteArray|SdkBytes>, but got ${value.javaClass.simpleName}")
+                    throw DynamoDbTypeMismatchException("expects DynamoSet<ByteArray|SdkBytes>, but got ${value.javaClass.simpleName}")
                 val binaries = value.map {
                     when (it) {
                         is ByteArray -> SdkBytes.fromByteArray(it)
@@ -341,7 +341,7 @@ object AttributeValueConverter {
 
             DynamoDataType.BOOLEAN -> {
                 if (value !is Boolean)
-                    throw DynamodbTypeMismatchException("expects Boolean, but got ${value.javaClass.simpleName}")
+                    throw DynamoDbTypeMismatchException("expects Boolean, but got ${value.javaClass.simpleName}")
                 AttributeValue.builder().bool(value).build()
             }
 
@@ -349,22 +349,22 @@ object AttributeValueConverter {
 
             DynamoDataType.LIST -> {
                 if (value !is Collection<*>)
-                    throw DynamodbTypeMismatchException("expects List<Any?>, but got ${value.javaClass.simpleName}")
+                    throw DynamoDbTypeMismatchException("expects List<Any?>, but got ${value.javaClass.simpleName}")
                 val listValues = value.map { toDb(it) }
                 AttributeValue.builder().l(listValues).build()
             }
 
             DynamoDataType.MAP -> {
                 if (value !is Map<*, *>)
-                    throw DynamodbTypeMismatchException("expects Map<String, Any?>, but got ${value.javaClass.simpleName}")
+                    throw DynamoDbTypeMismatchException("expects Map<String, Any?>, but got ${value.javaClass.simpleName}")
                 val mapValues = value.map { (k, v) ->
-                    if (k !is String) throw DynamodbTypeMismatchException("Map key must be String, got ${k?.javaClass?.simpleName}")
+                    if (k !is String) throw DynamoDbTypeMismatchException("Map key must be String, got ${k?.javaClass?.simpleName}")
                     k to toDb(v) // hint 提供子列信息
                 }.toMap()
                 AttributeValue.builder().m(mapValues).build()
             }
 
-            else -> throw DynamodbTypeMismatchException("Unsupported DynamoDB type: ${hint.dynamoDbType()}")
+            else -> throw DynamoDbTypeMismatchException("Unsupported DynamoDB type: ${hint.dynamoDbType()}")
         }
     }
 }

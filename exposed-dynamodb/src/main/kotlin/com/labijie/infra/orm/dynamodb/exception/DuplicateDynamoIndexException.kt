@@ -14,6 +14,6 @@ class DuplicateDynamoIndexException(
     tableName: String,
     indexName: String,
     columnName: String
-) : DynamoException(
+) : ExposedDynamoDbException(
     "Duplicate index detected in '${tableName}': index '$indexName' already exists for column '$columnName'."
 )

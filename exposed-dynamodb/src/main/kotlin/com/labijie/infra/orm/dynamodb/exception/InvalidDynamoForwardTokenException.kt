@@ -11,4 +11,4 @@ package com.labijie.infra.orm.dynamodb.exception
 class InvalidDynamoForwardTokenException(
     message: String? = "Invalid forward token for DynamoDB.",
     cause: Throwable? = null
-) : DynamoException(message, cause)
+) : ExposedDynamoDbException(message, cause)

@@ -130,7 +130,8 @@ object DynamodbSchemaUtils {
                 "Dynamo table '${response.tableDescription().tableName()}' Created.\n" +
                 "Table: ${response.tableDescription().tableName()}\n" +
                 "Attributes: \n" +
-                attributeDefinitions.map { "${it.value.attributeName()}: ${it.value.attributeType().name}" }.joinToString("\n")
+                attributeDefinitions.map { "${it.value.attributeName()}: ${it.value.attributeType().name}" }.joinToString("\n") +
+                if(table.indexes.isNotEmpty()) "Local Secondary Indexes: ${table.indexes.keys.joinToString(", ")} " else ""
             )
         }
 

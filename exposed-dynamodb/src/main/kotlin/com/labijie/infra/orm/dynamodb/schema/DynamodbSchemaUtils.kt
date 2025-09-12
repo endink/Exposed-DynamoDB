@@ -32,6 +32,11 @@ import kotlin.system.measureTimeMillis
 
 
 object DynamodbSchemaUtils {
+
+    private val logger by lazy {
+        LoggerFactory.getLogger(DynamodbSchemaUtils::class.java)
+    }
+
     /**
      * Create a DynamoDB table including primary key and Local Secondary Indexes (LSI)
      */
@@ -139,10 +144,6 @@ object DynamodbSchemaUtils {
 
             else -> null // BOOLEAN, NULL, LIST, MAP cannot be used in AttributeDefinitions
         }
-    }
-
-    private val logger by lazy {
-        LoggerFactory.getLogger(DynamodbSchemaUtils::class.java)
     }
 
     /**

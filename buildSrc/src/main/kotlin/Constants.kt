@@ -14,4 +14,6 @@ object Versions {
 
     const val infraOAuth2 = "2.1.+"
     const val caching = "1.5.+"
+
+    const val classgraph = "4.8.181"
 }

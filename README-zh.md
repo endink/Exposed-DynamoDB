@@ -15,7 +15,7 @@
 )
 ![workflow status](https://img.shields.io/github/actions/workflow/status/endink/Exposed-DynamoDB/build.yml)
 ![license](https://img.shields.io/github/license/endink/Exposed-DynamoDB?style=flat-square)
-![Static Badge](https://img.shields.io/badge/GraalVM-supported-green?style=flat&logoColor=blue&labelColor=orange)
+![Static Badge](https://img.shields.io/badge/GraalVM-supported-green?style=flat&color=green&labelColor=orange)
 
 </div>
 

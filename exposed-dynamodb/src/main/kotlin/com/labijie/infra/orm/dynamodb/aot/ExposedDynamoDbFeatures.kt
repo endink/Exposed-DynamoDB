@@ -8,6 +8,7 @@
 
 package com.labijie.infra.orm.dynamodb.aot
 
+import com.labijie.infra.orm.dynamodb.DynamoSet
 import com.labijie.infra.orm.dynamodb.DynamoTable
 import com.labijie.infra.orm.dynamodb.builder.DynamoUpdateBuilder
 import com.labijie.infra.orm.dynamodb.mapping.ReflectionDynamoDbMapper
@@ -31,6 +32,7 @@ class ExposedDynamoDbFeatures : Feature {
         registerEnum(AttributeValue.Type::class.java)
         registerObject(ReflectionDynamoDbMapper::class.java)
         RuntimeReflection.register(DynamoUpdateBuilder::class.java, DynamodbSchemaUtils::class.java, DynamoTable::class.java)
+        RuntimeReflection.register(DynamoSet::class.java)
 
         access.applicationClassLoader.definedPackages.forEach {
             val classGraph = ClassGraph()

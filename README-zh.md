@@ -11,6 +11,8 @@
 <div align="center">
 
 ![maven central version](https://img.shields.io/maven-central/v/com.labijie.orm/exposed-dynamodb?logo=java)
+![maven snapshot version](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Fcentral.sonatype.com%2Frepository%2Fmaven-snapshots%2Fcom%2Flabijie%2Form%2Fexposed-dynamodb%2Fmaven-metadata.xml&label=maven-snapshot&color=pink
+)
 ![workflow status](https://img.shields.io/github/actions/workflow/status/endink/Exposed-DynamoDB/build.yml)
 ![license](https://img.shields.io/github/license/endink/Exposed-DynamoDB?style=flat-square)
 ![Static Badge](https://img.shields.io/badge/GraalVM-supported-green?style=flat&logoColor=blue&labelColor=orange)

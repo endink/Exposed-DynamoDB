@@ -49,16 +49,15 @@ object DynamodbSchemaUtils {
             return false
         }
 
-        val attributeDefinitions = mutableSetOf<AttributeDefinition>()
+
+
+        val attributeDefinitions = mutableMapOf<String, AttributeDefinition>()
 
         // Add primary key attributes
-        table.primaryKey.partitionKey.getColumn().toAttributeDefinition()?.let { attributeDefinitions.add(it) }
-        table.primaryKey.sortKey?.getColumn()?.toAttributeDefinition()?.let { attributeDefinitions.add(it) }
+        table.primaryKey.partitionKey.getColumn().toAttributeDefinition()?.let { attributeDefinitions.putIfAbsent(it.attributeName(), it) }
+        table.primaryKey.sortKey?.getColumn()?.toAttributeDefinition()?.let { attributeDefinitions.putIfAbsent(it.attributeName(), it) }
 
-        // Add LSI sort key attributes
-        table.indexes.values.forEach { index ->
-            index.column.toAttributeDefinition()?.let { attributeDefinitions.add(it) }
-        }
+
 
         // Build primary table KeySchema (HASH + optional RANGE)
         val keySchema = mutableListOf<KeySchemaElement>()
@@ -77,46 +76,63 @@ object DynamodbSchemaUtils {
             )
         }
 
-        val keyAttributes = table.indexes.values.map { index -> index.column.name }.union(attributeDefinitions.map { it.attributeName() }).toSet()
 
-        // Build Local Secondary Indexes (each shares HASH with table, own RANGE)
-        val localSecondaryIndexes = table.indexes.map { (indexName, index) ->
-            LocalSecondaryIndex.builder()
-                .indexName(indexName)
-                .keySchema(
-                    KeySchemaElement.builder()
-                        .attributeName(table.primaryKey.partitionKey.getColumn().name)
-                        .keyType(KeyType.HASH)
-                        .build(),
-                    KeySchemaElement.builder()
-                        .attributeName(index.column.name)
-                        .keyType(KeyType.RANGE)
-                        .build()
-                )
-                .projection(
-                    Projection.builder()
-                        .projectionType(index.projection) // Can be KEYS_ONLY or INCLUDE
-                        .apply {
-                            if (index.projection == ProjectionType.INCLUDE) {
-                                nonKeyAttributes(index.projectedColumns.filter { !keyAttributes.contains(it) })
+        val lsi =  if(table.indexes.isNotEmpty()) {
+            // Add LSI sort key attributes
+            table.indexes.values.forEach { index ->
+                index.column.toAttributeDefinition()?.let { attributeDefinitions.putIfAbsent(it.attributeName(), it) }
+            }
+            val keyAttributes = attributeDefinitions.keys
+
+            // Build Local Secondary Indexes (each shares HASH with table, own RANGE)
+            table.indexes.map { (indexName, index) ->
+                LocalSecondaryIndex.builder()
+                    .indexName(indexName)
+                    .keySchema(
+                        KeySchemaElement.builder()
+                            .attributeName(table.primaryKey.partitionKey.getColumn().name)
+                            .keyType(KeyType.HASH)
+                            .build(),
+                        KeySchemaElement.builder()
+                            .attributeName(index.column.name)
+                            .keyType(KeyType.RANGE)
+                            .build()
+                    )
+                    .projection(
+                        Projection.builder()
+                            .projectionType(index.projection) // Can be KEYS_ONLY or INCLUDE
+                            .apply {
+                                if (index.projection == ProjectionType.INCLUDE) {
+                                    nonKeyAttributes(index.projectedColumns.filter { !keyAttributes.contains(it) })
+                                }
                             }
-                        }
-                        .build()
-                )
-                .build()
-        }
+                            .build()
+                    )
+                    .build()
+            }
+        } else { null }
 
         // Create table request
         val request = CreateTableRequest.builder()
             .tableName(table.tableName)
-            .attributeDefinitions(attributeDefinitions)
+            .attributeDefinitions(attributeDefinitions.values)
             .keySchema(keySchema)
             .billingMode(BillingMode.PAY_PER_REQUEST)
-            .localSecondaryIndexes(localSecondaryIndexes)
+            .let {
+                builder->
+                lsi?.let { idx -> builder.localSecondaryIndexes(idx) } ?: builder
+            }
             .build()
 
         val response = client.createTable(request)
-        println("Table created: ${response.tableDescription().tableName()}")
+        if(logger.isInfoEnabled) {
+            logger.info(
+                "Dynamo table '${response.tableDescription().tableName()}' Created.\n" +
+                "Table: ${response.tableDescription().tableName()}\n" +
+                "Attributes: \n" +
+                attributeDefinitions.map { "${it.value.attributeName()}: ${it.value.attributeType().name}" }.joinToString("\n")
+            )
+        }
 
         return true
     }

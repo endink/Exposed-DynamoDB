@@ -30,20 +30,7 @@ interface IDynamodbUpdateBuilder {
     infix operator fun <T : Number> ColumnGetExpr<T>.minusAssign(value: T) {
         val col = this.column
         if(col is NumericColumn) {
-
-            val negValue: T? = run {
-                val bd = BigDecimal(value.toString()).negate()
-                when (value) {
-                    is Int -> bd.toInt() as T
-                    is Long -> bd.toLong() as T
-                    is Short -> bd.toShort() as T
-                    is Float -> bd.toFloat() as T
-                    is Double -> bd.toDouble() as T
-                    is BigInteger -> bd.toBigInteger() as T
-                    is BigDecimal -> bd as T
-                    else -> null
-                }
-            }
+            val negValue = value.negateAs<T>()
             negValue?.let { addExpression(AddExpr(this, it)) }
             return
         }

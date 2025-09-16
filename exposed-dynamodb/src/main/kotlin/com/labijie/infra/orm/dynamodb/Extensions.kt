@@ -11,6 +11,8 @@ package com.labijie.infra.orm.dynamodb
 
 import com.labijie.infra.orm.dynamodb.exception.DynamoDbTypeMismatchException
 import software.amazon.awssdk.services.dynamodb.model.*
+import java.math.BigDecimal
+import java.math.BigInteger
 
 
 internal inline fun <T> T.ifNullOrBlankInput(value: String?, block: T.(String) -> T): T {
@@ -20,6 +22,21 @@ internal inline fun <T> T.ifNullOrBlankInput(value: String?, block: T.(String) -
     return this
 }
 
+
+@Suppress("UNCHECKED_CAST")
+internal fun <T : Number> Number.negateAs(): T? {
+    return when (this) {
+        is Byte -> (-this).toByte() as T
+        is Int -> (-this) as T
+        is Long -> (-this) as T
+        is Short -> (-this) as T
+        is Float -> (-this) as T
+        is Double -> (-this) as T
+        is BigInteger -> this.negate() as T
+        is BigDecimal -> this.negate() as T
+        else -> throw DynamoDbTypeMismatchException( "Unsupported Number type: ${this.javaClass.canonicalName ?: this.javaClass.name}")
+    }
+}
 
 internal inline fun <T, TKey, TValue> T.ifNotNullOrEmpty(
     value: Map<TKey, TValue>?,

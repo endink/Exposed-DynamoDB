@@ -2,7 +2,7 @@
  * This file is part of Exposed-DynamoDB project .
  * Copyright (c) 2025
  * @author Anders Xiao
- * 
+ *
  * File Create: 2025-09-03
  */
 
@@ -10,29 +10,54 @@
 package com.labijie.infra.orm.dynamodb
 
 import com.labijie.infra.orm.dynamodb.builder.DynamoUpdateBuilder
+import java.math.BigDecimal
+import java.math.BigInteger
 
 
 internal fun IDynamodbUpdateBuilder.addExpression(value: DynamoUpdateExpression<*>) {
-    if(this is DynamoUpdateBuilder<*, *>.DynamoSegmentsBuilder) {
+    if (this is DynamoUpdateBuilder<*, *>.DynamoSegmentsBuilder) {
         this.expressions.add(value)
     }
 }
 
 interface IDynamodbUpdateBuilder {
 
-    infix operator fun <T: Number> ColumnGetExpr<T>.plusAssign(value: T) {
-         addExpression(AddExpr(this, value))
+    infix operator fun <T : Number> ColumnGetExpr<T>.plusAssign(value: T) {
+        addExpression(AddExpr(this, value))
     }
 
-    infix operator fun <T: Number> ColumnGetExpr<T>.minusAssign(value: T) {
-        addExpression(DeleteExpr(this, value))
+    @Suppress("UNCHECKED_CAST")
+    infix operator fun <T : Number> ColumnGetExpr<T>.minusAssign(value: T) {
+        val col = this.column
+        if(col is NumericColumn) {
+
+            val negValue: T? = run {
+                val bd = BigDecimal(value.toString()).negate()
+                when (value) {
+                    is Int -> bd.toInt() as T
+                    is Long -> bd.toLong() as T
+                    is Short -> bd.toShort() as T
+                    is Float -> bd.toFloat() as T
+                    is Double -> bd.toDouble() as T
+                    is BigInteger -> bd.toBigInteger() as T
+                    is BigDecimal -> bd as T
+                    else -> null
+                }
+            }
+            negValue?.let { addExpression(AddExpr(this, it)) }
+            return
+        }
+
+        val right = MinusExpr(this.column.colExpr(), value)
+        val setExpr = SetExpr(this, right)
+        addExpression(setExpr)
     }
 
-    infix operator fun <T: Number> NumericColumn<T>.minus(value: T): MinusExpr<T> {
+    infix operator fun <T : Number> NumericColumn<T>.minus(value: T): MinusExpr<T> {
         return MinusExpr(this.colExpr(), value)
     }
 
-    infix operator fun <T: Number> NumericColumn<T>.plus(value: T): PlusExpr<T> {
+    infix operator fun <T : Number> NumericColumn<T>.plus(value: T): PlusExpr<T> {
         return PlusExpr(this.colExpr(), value)
     }
 
@@ -52,19 +77,19 @@ interface IDynamodbUpdateBuilder {
         return IfNotExistExpr(this, initValue)
     }
 
-    infix operator fun <T: Number> IfNotExistExpr<T>.minus(value: T): MinusExpr<T> {
+    infix operator fun <T : Number> IfNotExistExpr<T>.minus(value: T): MinusExpr<T> {
         return MinusExpr(this, value)
     }
 
-    infix operator fun <T: Number> IfNotExistExpr<T>.plus(value: T): PlusExpr<T> {
+    infix operator fun <T : Number> IfNotExistExpr<T>.plus(value: T): PlusExpr<T> {
         return PlusExpr(this, value)
     }
 
-    infix operator fun <T: Number> DynamoColumn<T>.minus(value: T): MinusExpr<T> {
+    infix operator fun <T : Number> DynamoColumn<T>.minus(value: T): MinusExpr<T> {
         return MinusExpr(this.colExpr(), value)
     }
 
-    infix operator fun <T: Number> DynamoColumn<T>.plus(value: T): PlusExpr<T> {
+    infix operator fun <T : Number> DynamoColumn<T>.plus(value: T): PlusExpr<T> {
         return PlusExpr(this.colExpr(), value)
     }
 
@@ -89,11 +114,11 @@ interface IDynamodbUpdateBuilder {
     }
 
 
-    infix operator fun ColumnGetExpr<List<Any>>.get(int: Int) : ListItemGetExpr {
+    infix operator fun ColumnGetExpr<List<Any>>.get(int: Int): ListItemGetExpr {
         return ListItemGetExpr(this, int)
     }
 
-    infix operator fun ColumnGetExpr<Map<String, *>>.get(key: String) : MapItemGetExpr {
+    infix operator fun ColumnGetExpr<Map<String, *>>.get(key: String): MapItemGetExpr {
         return MapItemGetExpr(this, key)
     }
 
